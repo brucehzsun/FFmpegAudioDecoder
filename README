@@ -2,5 +2,6 @@
     brew install ffmpeg
 
 # 解码后的pcm文件是单声道，16000采样率，文件存储在data目录下
+  原始mp3的采样率是44100 Hz, 转码后的采样率是16000 Hz
 
 # 解码后的pcm文件可以使用 Audacity 播放器播放
