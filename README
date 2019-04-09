@@ -1,0 +1,6 @@
+# 安装FFmpeg环境
+    brew install ffmpeg
+
+# 解码后的pcm文件是单声道，16000采样率，文件存储在data目录下
+
+# 解码后的pcm文件可以使用 Audacity 播放器播放
