@@ -8,7 +8,7 @@ set(EXECUTABLE_OUTPUT_PATH ${FFmpegAudioDecoder_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${FFmpegAudioDecoder_SOURCE_DIR}/lib)
 
 set(SRCS
-        src/main.cpp
+        src/ffmpeg/main.cpp
         )
 
 include_directories(${FFmpegAudioDecoder_SOURCE_DIR}/include/)

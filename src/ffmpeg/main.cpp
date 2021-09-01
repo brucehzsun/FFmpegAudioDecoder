@@ -45,8 +45,8 @@ int main() {
     FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
     FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
 
-    FFmpegDecoder decoder;
-    decoder.start(read_buffer, fp_open, write_buffer, fp_write, 16000);
+    FFmpegDecoder *decoder;
+    decoder->start(read_buffer, fp_open, write_buffer, fp_write, 16000);
 
 
     std::chrono::milliseconds endms = std::chrono::duration_cast<std::chrono::milliseconds>(
