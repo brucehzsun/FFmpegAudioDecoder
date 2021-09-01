@@ -12,6 +12,8 @@ set(SRCS
         )
 
 include_directories(${FFmpegAudioDecoder_SOURCE_DIR}/include/)
+include_directories(/usr/local/ffmpeg/include/)
+link_directories(/usr/local/ffmpeg/lib/)
 
 IF (WIN32)
     MESSAGE(STATUS "Now is windows")

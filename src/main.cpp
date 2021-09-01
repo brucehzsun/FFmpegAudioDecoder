@@ -41,7 +41,7 @@ int main() {
     std::cout << ms.count() << std::endl;
 
     const char *inputFileName = "../data/music.mp3";
-    const char *out_filename = "../data/music.pcm";
+    const char *out_filename = "../data/music-out.pcm";
     FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
     FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
 
@@ -52,6 +52,7 @@ int main() {
     std::chrono::milliseconds endms = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()
     );
+//    delete decoder;
     cout << "C++ finish, time = " << (endms.count() - startTime) << endl;
     return 0;
 }
