@@ -34,8 +34,7 @@ static int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat samp
     return -1;
 }
 
-static void decode(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame, format_buffer_write write_buffer,
-                   void *opaque) {
+int AudioDecoder::decode_frame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame) {
     int i, ch;
     int ret, data_size;
 
@@ -43,37 +42,81 @@ static void decode(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame, forma
     ret = avcodec_send_packet(dec_ctx, pkt);
     if (ret < 0) {
         fprintf(stdout, "Error submitting the packet to the decoder\n");
-        return;
+        return -100;
+    }
+
+    if (ret == 0 && swr_context == nullptr) {
+        printf("init swr_context\n");
+        /** 开始设置转码信息**/
+        // 打开转码器
+        if ((swr_context = swr_alloc()) == nullptr) {
+            printf("C++ swr_alloc failed\n");
+            return -200;
+        }
+
+        /**获取输入参数*/
+        //输入声道布局类型
+        int64_t in_ch_layout = av_get_default_channel_layout(context->channels);
+
+        //设置转码参数
+        swr_context = swr_alloc_set_opts(swr_context, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_S16, _output_sample_rate,
+                                         in_ch_layout, context->sample_fmt, context->sample_rate, 0, nullptr);
+        if (swr_context == nullptr) {
+            printf("C++ swr_alloc_set_opts failed\n");
+            return -201;
+        }
+
+        //初始化音频采样数据上下文;初始化转码器
+        if ((ret = swr_init(swr_context) < 0)) {
+            printf("C++ swr_init failed:%d\n", ret);
+            return ret;
+        }
     }
 
     /* read all the output frames (in general there may be any number of them */
     while (ret >= 0) {
         ret = avcodec_receive_frame(dec_ctx, frame);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-            return;
+            return 0;
         else if (ret < 0) {
             fprintf(stderr, "Error during decoding\n");
-            exit(1);
+            return ret;
         }
-        data_size = av_get_bytes_per_sample(dec_ctx->sample_fmt);
-        if (data_size < 0) {
-            /* This should not occur, checking just for paranoia */
-            fprintf(stderr, "Failed to calculate data size\n");
-            exit(1);
+
+        //3、类型转换(音频采样数据格式有很多种类型)
+        if ((ret = swr_convert(swr_context, &out_buffer, IO_BUF_SIZE, (const uint8_t **) frame->data,
+                               frame->nb_samples)) < 0) {
+            printf("C++ swr_convert error \n");
+            return ret;
         }
-        for (i = 0; i < frame->nb_samples; i++)
-            for (ch = 0; ch < dec_ctx->channels; ch++) {
-//                fwrite(frame->data[ch] + data_size * i, 1, data_size, outfile);
-                (*write_buffer)(opaque, frame->data[ch] + data_size * i, data_size);
-            }
+
+        //5、写入文件(你知道要写多少吗？)
+        int resampled_data_size = av_samples_get_buffer_size(nullptr, out_nb_channels, ret, AV_SAMPLE_FMT_S16, 1);
+        if (resampled_data_size < 0) {
+            printf("C++ av_samples_get_buffer_size error:%d\n", resampled_data_size);
+            return resampled_data_size;
+        }
+        (*_write_buffer)(outfile, out_buffer, resampled_data_size);
     }
+    return 0;
 }
 
 
 AudioDecoder::AudioDecoder(int output_sample_rate, format_buffer_write write_buffer, bool localTest) {
 
     _write_buffer = write_buffer;
+    this->_output_sample_rate = output_sample_rate;
     pkt = av_packet_alloc();
+
+    //缓冲区大小 = 采样率(44100HZ) * 采样精度(16位 = 2字节)
+    if ((out_buffer = (uint8_t *) av_malloc(IO_BUF_SIZE)) == nullptr) {
+        printf("C++ av_malloc(IO_BUF_SIZE) failed\n");
+        return;
+    }
+
+    /**设置输出参数*/
+    //输出声道数量 上面设置为立体声
+    this->out_nb_channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_MONO);
 
     /* find the MPEG audio decoder */
     const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_MP3);
@@ -88,24 +131,25 @@ AudioDecoder::AudioDecoder(int output_sample_rate, format_buffer_write write_buf
         return;
     }
 
-    c = avcodec_alloc_context3(codec);
-    if (!c) {
+    context = avcodec_alloc_context3(codec);
+    if (!context) {
         fprintf(stderr, "Could not allocate audio codec context\n");
         return;
     }
 
     /* open it */
-    if (avcodec_open2(c, codec, nullptr) < 0) {
+    if (avcodec_open2(context, codec, nullptr) < 0) {
         fprintf(stderr, "Could not open codec\n");
         return;
     }
 
     if (localTest) {
-        outfile = fopen("../data/music_feed.pcm", "wb");
+        outfile = fopen("../data/music_feed_16k.pcm", "wb");
         if (!outfile) {
-            av_free(c);
+            av_free(context);
         }
     }
+
 }
 
 int AudioDecoder::feed(uint8_t *raw_data, int raw_data_size) {
@@ -125,7 +169,8 @@ int AudioDecoder::feed(uint8_t *raw_data, int raw_data_size) {
         }
 
         //ret是输入数据inbuf中已经使用的数据长度
-        ret = av_parser_parse2(parser, c, &pkt->data, &pkt->size, _data, _data_size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
+        ret = av_parser_parse2(parser, context, &pkt->data, &pkt->size, _data, _data_size, AV_NOPTS_VALUE,
+                               AV_NOPTS_VALUE, 0);
         if (ret < 0) {
             fprintf(stderr, "Error while parsing\n");
             return -2;
@@ -133,8 +178,9 @@ int AudioDecoder::feed(uint8_t *raw_data, int raw_data_size) {
         _data += ret; //指针偏移量
         _data_size -= ret; // 剩余数据的大小
 
-        if (pkt->size)
-            decode(c, pkt, decoded_frame, _write_buffer, outfile);
+        if (pkt->size) {
+            int decode_ret = decode_frame(context, pkt, decoded_frame);
+        }
 
         if (_data_size < AUDIO_REFILL_THRESH) {
 //            printf("data less AUDIO_REFILL_THRESH,_data_size=%d\n", _data_size);
@@ -155,10 +201,10 @@ void AudioDecoder::stop() {
     /* flush the decoder */
     pkt->data = nullptr;
     pkt->size = 0;
-    decode(c, pkt, decoded_frame, _write_buffer, outfile);
+    decode_frame(context, pkt, decoded_frame);
 
     /* print output pcm infomations, because there have no metadata of pcm */
-    sfmt = c->sample_fmt;
+    sfmt = context->sample_fmt;
 
     if (av_sample_fmt_is_planar(sfmt)) {
         const char *packed = av_get_sample_fmt_name(sfmt);
@@ -176,7 +222,7 @@ void AudioDecoder::stop() {
 
     printf("Play the output audio file with the command:\n"
            "ffplay -f %s %d %d \n",
-           fmt, c->channels, c->sample_rate);
+           fmt, context->channels, context->sample_rate);
 }
 
 AudioDecoder::~AudioDecoder() {
@@ -184,7 +230,9 @@ AudioDecoder::~AudioDecoder() {
         fclose(outfile);
     }
 
-    avcodec_free_context(&c);
+    av_free(out_buffer);
+    swr_free(&swr_context);
+    avcodec_free_context(&context);
     av_parser_close(parser);
     av_frame_free(&decoded_frame);
     av_packet_free(&pkt);
