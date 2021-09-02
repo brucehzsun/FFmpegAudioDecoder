@@ -1,36 +1,43 @@
 cmake_minimum_required(VERSION 3.8.2)
 project(FFmpegAudioDecoder)
 
-set(CMAKE_C_STANDARD 11)
+set(Boost_USE_STATIC_LIBS ON)
+find_package(LibXml2 REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(ICONV MODULE REQUIRED)
 
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if (COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif (COMPILER_SUPPORTS_CXX0X)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else ()
+    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+
+endif ()
 
 set(EXECUTABLE_OUTPUT_PATH ${FFmpegAudioDecoder_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${FFmpegAudioDecoder_SOURCE_DIR}/lib)
 
 set(SRCS
         #        src/ffmpeg/main.cpp
-        src/ffmpeg2/main.cpp
+                src/ffmpeg2/example.cpp
+#        src/ffmpeg2/main.cpp
+#        src/ffmpeg2/AudioDecoder.cpp
+#        src/ffmpeg2/AudioDecoder.h
         )
 
-include_directories(${FFmpegAudioDecoder_SOURCE_DIR}/include/ /Users/brucesun/opt/anaconda3/include)
-
-find_path(AVCODEC_INCLUDE_DIR libavcodec/avcodec.h)
-find_library(AVCODEC_LIBRARY avcodec)
-
-find_path(AVFORMAT_INCLUDE_DIR libavformat/avformat.h)
-find_library(AVFORMAT_LIBRARY avformat)
-
-find_path(AVUTIL_INCLUDE_DIR libavutil/avutil.h)
-find_library(AVUTIL_LIBRARY avutil)
-
-find_path(AVDEVICE_INCLUDE_DIR libavdevice/avdevice.h)
-find_library(AVDEVICE_LIBRARY avdevice)
+include_directories(${FFmpegAudioDecoder_SOURCE_DIR}/src/ffmpeg2)
 
 
 IF (WIN32)
     MESSAGE(STATUS "Now is windows")
 ELSEIF (APPLE)
     MESSAGE(STATUS "Now is Apple systens.")
+    include_directories(/Users/brucesun/opt/anaconda3/include)
+    link_directories(/Users/brucesun/opt/anaconda3/lib/)
 ELSEIF (UNIX)
     MESSAGE(STATUS "Now is UNIX-like OS's.")
     include_directories(/usr/local/ffmpeg/include/)

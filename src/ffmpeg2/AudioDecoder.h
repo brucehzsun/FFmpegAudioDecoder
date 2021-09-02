@@ -8,8 +8,9 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libavdevice/avdevice.h>
-#include<libswresample/swresample.h>
+#include <libswresample/swresample.h>
+#include <libavutil/frame.h>
+#include <libavutil/mem.h>
 }
 
 #define AUDIO_INBUF_SIZE 20480
@@ -17,7 +18,7 @@ extern "C" {
 
 class AudioDecoder {
 public:
-    AudioDecoder(unsigned int output_sample_rate);
+    AudioDecoder(int output_sample_rate);
 
     ~AudioDecoder();
 
@@ -28,19 +29,18 @@ public:
 private:
     const char *outfilename, *filename;
     const AVCodec *codec;
-    AVCodecContext *c = NULL;
-    AVCodecParserContext *parser = NULL;
+    AVCodecContext *c = nullptr;
+    AVCodecParserContext *parser = nullptr;
     int len, ret;
     FILE *f, *outfile;
     uint8_t inbuf[AUDIO_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
-    uint8_t *data;
+    char *data;
     size_t data_size;
     AVPacket *pkt;
-    AVFrame *decoded_frame = NULL;
+    AVFrame *decoded_frame = nullptr;
     enum AVSampleFormat sfmt;
     int n_channels = 0;
     const char *fmt;
 };
-
 
 #endif //FFMPEGAUDIODECODER_AUDIODECODER_H

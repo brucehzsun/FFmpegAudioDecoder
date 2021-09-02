@@ -45,17 +45,17 @@ int main() {
     FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
     FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
 
-    AudioDecoder *decoder;
+    auto *pDecoder = new AudioDecoder(16000);
 
     char *inbuffer;
     int buf_size = 1024;
     while (!feof(fp_open)) {
         int true_size = fread(inbuffer, 1, buf_size, fp_open);
-        decoder->feed2(inbuffer, buf_size);
+        pDecoder->feed2(inbuffer, true_size);
     }
 
-    decoder->stop();
-    delete decoder;
+    pDecoder->stop();
+    delete pDecoder;
 
     std::chrono::milliseconds endms = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()
