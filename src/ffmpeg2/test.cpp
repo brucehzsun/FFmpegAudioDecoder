@@ -1,7 +1,3 @@
-//
-// Created by bruce sun on 2021/9/1.
-//
-
 /*
  * Copyright (c) 2001 Fabrice Bellard
  *
