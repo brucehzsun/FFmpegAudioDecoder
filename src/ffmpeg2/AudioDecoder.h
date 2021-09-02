@@ -5,6 +5,15 @@
 #ifndef FFMPEGAUDIODECODER_AUDIODECODER_H
 #define FFMPEGAUDIODECODER_AUDIODECODER_H
 
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavdevice/avdevice.h>
+#include<libswresample/swresample.h>
+}
+
+#define AUDIO_INBUF_SIZE 20480
+#define AUDIO_REFILL_THRESH 4096
 
 class AudioDecoder {
 public:
@@ -12,7 +21,8 @@ public:
 
     ~AudioDecoder();
 
-    void feed2(const char *inbuf, int data_size);
+    void feed2(char *inbuf, int data_size);
+
     void stop();
 
 private:

@@ -47,11 +47,11 @@ int main() {
 
     AudioDecoder *decoder;
 
-    unsigned char *inbuffer;
+    char *inbuffer;
     int buf_size = 1024;
     while (!feof(fp_open)) {
-        int true_size = fread(buf, 1, buf_size, fp_open);
-        decoder->feed2(buf, buf_size)
+        int true_size = fread(inbuffer, 1, buf_size, fp_open);
+        decoder->feed2(inbuffer, buf_size);
     }
 
     decoder->stop();
