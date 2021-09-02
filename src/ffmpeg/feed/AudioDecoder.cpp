@@ -110,8 +110,8 @@ AudioDecoder::AudioDecoder(int output_sample_rate, FILE *fp_open) {
 
 void AudioDecoder::feed2(uint8_t *inbuf, int data_size) {
     /* decode until eof */
+    //使用双指针
     data = inbuf;
-//    data_size = fread(inbuf, 1, AUDIO_INBUF_SIZE, f);
 
     while (data_size > 0) {
         if (!decoded_frame) {
@@ -121,6 +121,7 @@ void AudioDecoder::feed2(uint8_t *inbuf, int data_size) {
             }
         }
 
+        //ret是输入数据inbuf中已经使用的数据长度
         ret = av_parser_parse2(parser, c, &pkt->data, &pkt->size,
                                data, data_size,
                                AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
@@ -128,13 +129,14 @@ void AudioDecoder::feed2(uint8_t *inbuf, int data_size) {
             fprintf(stderr, "Error while parsing\n");
             exit(1);
         }
-        data += ret;
-        data_size -= ret;
+        data += ret; //指针偏移量
+        data_size -= ret; // 剩余数据的大小
 
         if (pkt->size)
             decode(c, pkt, decoded_frame, outfile);
 
         if (data_size < AUDIO_REFILL_THRESH) {
+            //从 data 复制 data_size 个字符到 inbuf
             memmove(inbuf, data, data_size);
             data = inbuf;
             len = fread(data + data_size, 1,

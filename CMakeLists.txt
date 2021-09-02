@@ -24,9 +24,9 @@ set(LIBRARY_OUTPUT_PATH ${FFmpegAudioDecoder_SOURCE_DIR}/lib)
 set(SRCS
         #        src/ffmpeg/main.cpp
         #                src/ffmpeg2/example.cpp
-        src/ffmpeg2/main.cpp
-        src/ffmpeg2/AudioDecoder.cpp
-        src/ffmpeg2/AudioDecoder.h
+        src/ffmpeg/feed/main.cpp
+        src/ffmpeg/feed/AudioDecoder.cpp
+        src/ffmpeg/feed/AudioDecoder.h
         )
 
 #include_directories(${FFmpegAudioDecoder_SOURCE_DIR})
