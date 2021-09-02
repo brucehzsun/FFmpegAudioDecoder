@@ -8,8 +8,7 @@
 #include <string.h>
 
 
-static int get_format_from_sample_fmt(const char **fmt,
-                                      enum AVSampleFormat sample_fmt) {
+static int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat sample_fmt) {
     int i;
     struct sample_fmt_entry {
         enum AVSampleFormat sample_fmt;
@@ -21,7 +20,7 @@ static int get_format_from_sample_fmt(const char **fmt,
             {AV_SAMPLE_FMT_FLT, "f32be", "f32le"},
             {AV_SAMPLE_FMT_DBL, "f64be", "f64le"},
     };
-    *fmt = NULL;
+    *fmt = nullptr;
 
     for (i = 0; i < FF_ARRAY_ELEMS(sample_fmt_entries); i++) {
         struct sample_fmt_entry *entry = &sample_fmt_entries[i];
@@ -31,9 +30,7 @@ static int get_format_from_sample_fmt(const char **fmt,
         }
     }
 
-    fprintf(stderr,
-            "sample format %s is not supported as output format\n",
-            av_get_sample_fmt_name(sample_fmt));
+    fprintf(stderr, "sample format %s is not supported as output format\n", av_get_sample_fmt_name(sample_fmt));
     return -1;
 }
 
@@ -96,61 +93,63 @@ AudioDecoder::AudioDecoder(int output_sample_rate, FILE *fp_open) {
     }
 
     /* open it */
-    if (avcodec_open2(c, codec, NULL) < 0) {
+    if (avcodec_open2(c, codec, nullptr) < 0) {
         fprintf(stderr, "Could not open codec\n");
         exit(1);
     }
 
-    outfile = fopen("../data/out_2.pcm", "wb");
+    outfile = fopen("../data/music_feed.pcm", "wb");
     if (!outfile) {
         av_free(c);
         exit(1);
     }
 }
 
-void AudioDecoder::feed2(uint8_t *inbuf, int data_size) {
-    /* decode until eof */
-    //使用双指针
-    data = inbuf;
+int AudioDecoder::feed(uint8_t *raw_data, int raw_data_size) {
 
-    while (data_size > 0) {
+    memmove(_data_buffer + _data_size, raw_data, raw_data_size);
+    _data_size += raw_data_size;
+    //使用双指针
+    _data = _data_buffer;
+
+    while (_data_size > 0) {
         if (!decoded_frame) {
             if (!(decoded_frame = av_frame_alloc())) {
                 fprintf(stderr, "Could not allocate audio frame\n");
-                exit(1);
+                return -1;
             }
         }
 
         //ret是输入数据inbuf中已经使用的数据长度
-        ret = av_parser_parse2(parser, c, &pkt->data, &pkt->size,
-                               data, data_size,
-                               AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
+        ret = av_parser_parse2(parser, c, &pkt->data, &pkt->size, _data, _data_size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
         if (ret < 0) {
             fprintf(stderr, "Error while parsing\n");
-            exit(1);
+            return -2;
         }
-        data += ret; //指针偏移量
-        data_size -= ret; // 剩余数据的大小
+        _data += ret; //指针偏移量
+        _data_size -= ret; // 剩余数据的大小
 
         if (pkt->size)
             decode(c, pkt, decoded_frame, outfile);
 
-        if (data_size < AUDIO_REFILL_THRESH) {
+        if (_data_size < AUDIO_REFILL_THRESH) {
+//            printf("data less AUDIO_REFILL_THRESH,_data_size=%d\n", _data_size);
             //从 data 复制 data_size 个字符到 inbuf
-            memmove(inbuf, data, data_size);
-            data = inbuf;
-            len = fread(data + data_size, 1,
-                        AUDIO_INBUF_SIZE - data_size, f);
-            if (len > 0)
-                data_size += len;
+            memmove(_data_buffer, _data, _data_size);
+            _data = _data_buffer;
+            break;
+//            len = fread(data + data_size, 1,
+//                        AUDIO_INBUF_SIZE - data_size, f);
+//            if (len > 0)
+//                data_size += len;
         }
     }
-    printf("feed2 finish !\n");
+    return 0;
 }
 
 void AudioDecoder::stop() {
-/* flush the decoder */
-    pkt->data = NULL;
+    /* flush the decoder */
+    pkt->data = nullptr;
     pkt->size = 0;
     decode(c, pkt, decoded_frame, outfile);
 

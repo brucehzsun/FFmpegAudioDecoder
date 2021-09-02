@@ -22,20 +22,22 @@ public:
 
     ~AudioDecoder();
 
-    void feed2(uint8_t *inbuf, int data_size);
+    int feed(uint8_t *inbuf, int data_size);
 
     void stop();
 
 private:
-    const char *outfilename, *filename;
+    //输入数据的buffer
+    uint8_t _data_buffer[AUDIO_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
+    int _data_size;
+    uint8_t *_data;
+
+    const char *outfilename;
     const AVCodec *codec;
     AVCodecContext *c = nullptr;
     AVCodecParserContext *parser = nullptr;
     int len, ret;
     FILE *f, *outfile;
-    uint8_t inbuf[AUDIO_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
-    uint8_t *data;
-    size_t data_size;
     AVPacket *pkt;
     AVFrame *decoded_frame = nullptr;
     enum AVSampleFormat sfmt;

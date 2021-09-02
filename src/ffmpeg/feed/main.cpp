@@ -48,10 +48,10 @@ int main() {
     auto *pDecoder = new AudioDecoder(16000, fp_open);
 
     int buf_size = 1024 * 1;
-    uint8_t inbuffer[AUDIO_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
+    uint8_t inbuffer[buf_size];
     while (!feof(fp_open)) {
         int true_size = fread(inbuffer, 1, buf_size, fp_open);
-        pDecoder->feed2(inbuffer, true_size);
+        pDecoder->feed(inbuffer, true_size);
     }
 
     pDecoder->stop();
