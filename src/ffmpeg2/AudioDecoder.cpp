@@ -119,7 +119,7 @@ int AudioDecoder::feed(char *buf) {
     }
 }
 
-void AudioDecoder::feed2(const char *inbuf, int data_size) {
+void AudioDecoder::feed2(const unsigned char *inbuf, int data_size) {
     /* decode until eof */
     data = inbuf;
     int ret;
@@ -174,7 +174,7 @@ void AudioDecoder::feed2(const char *inbuf, int data_size) {
         goto end;
 }
 
-void AudioDecoder::stop(){
+void AudioDecoder::stop() {
     /* flush the decoder */
     pkt->data = NULL;
     pkt->size = 0;

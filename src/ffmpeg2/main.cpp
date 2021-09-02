@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <fstream>
 
 using namespace std;
 
@@ -36,7 +37,6 @@ int main() {
     std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()
     );
-
     long startTime = ms.count();
     std::cout << ms.count() << std::endl;
 
@@ -46,8 +46,16 @@ int main() {
     FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
 
     AudioDecoder *decoder;
-//    decoder->start(read_buffer, fp_open, write_buffer, fp_write, 16000);
 
+    unsigned char *inbuffer;
+    int buf_size = 1024;
+    while (!feof(fp_open)) {
+        int true_size = fread(buf, 1, buf_size, fp_open);
+        decoder->feed2(buf, buf_size)
+    }
+
+    decoder->stop();
+    delete decoder;
 
     std::chrono::milliseconds endms = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()

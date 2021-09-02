@@ -8,9 +8,12 @@
 
 class AudioDecoder {
 public:
-    AudioDecoder(unsigned int output_sample_rate)
+    AudioDecoder(unsigned int output_sample_rate);
 
-    ~AudioDecoder()
+    ~AudioDecoder();
+
+    void feed2(const char *inbuf, int data_size);
+    void stop();
 
 private:
     const char *outfilename, *filename;
