@@ -34,43 +34,17 @@ static int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat samp
     return -1;
 }
 
-int AudioDecoder::decode_frame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame) {
-    int i, ch;
-    int ret, data_size;
+int AudioDecoder::decodeFrame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame) {
 
     /* send the packet with the compressed data to the decoder */
-    ret = avcodec_send_packet(dec_ctx, pkt);
+    int ret = avcodec_send_packet(dec_ctx, pkt);
     if (ret < 0) {
         fprintf(stdout, "Error submitting the packet to the decoder\n");
         return -100;
     }
 
     if (ret == 0 && swr_context == nullptr) {
-        printf("init swr_context\n");
-        /** 开始设置转码信息**/
-        // 打开转码器
-        if ((swr_context = swr_alloc()) == nullptr) {
-            printf("C++ swr_alloc failed\n");
-            return -200;
-        }
-
-        /**获取输入参数*/
-        //输入声道布局类型
-        int64_t in_ch_layout = av_get_default_channel_layout(context->channels);
-
-        //设置转码参数
-        swr_context = swr_alloc_set_opts(swr_context, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_S16, _output_sample_rate,
-                                         in_ch_layout, context->sample_fmt, context->sample_rate, 0, nullptr);
-        if (swr_context == nullptr) {
-            printf("C++ swr_alloc_set_opts failed\n");
-            return -201;
-        }
-
-        //初始化音频采样数据上下文;初始化转码器
-        if ((ret = swr_init(swr_context) < 0)) {
-            printf("C++ swr_init failed:%d\n", ret);
-            return ret;
-        }
+        initSwrContext();
     }
 
     /* read all the output frames (in general there may be any number of them */
@@ -101,6 +75,35 @@ int AudioDecoder::decode_frame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *
     return 0;
 }
 
+int AudioDecoder::initSwrContext() {
+    printf("init swr_context\n");
+    /** 开始设置转码信息**/
+    // 打开转码器
+    if ((swr_context = swr_alloc()) == nullptr) {
+        printf("C++ swr_alloc failed\n");
+        return -200;
+    }
+
+    /**获取输入参数*/
+    //输入声道布局类型
+    int64_t in_ch_layout = av_get_default_channel_layout(context->channels);
+
+    //设置转码参数
+    swr_context = swr_alloc_set_opts(swr_context, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_S16, _output_sample_rate,
+                                     in_ch_layout, context->sample_fmt, context->sample_rate, 0, nullptr);
+    if (swr_context == nullptr) {
+        printf("C++ swr_alloc_set_opts failed\n");
+        return -201;
+    }
+
+    int ret;
+    //初始化音频采样数据上下文;初始化转码器
+    if ((ret = swr_init(swr_context) < 0)) {
+        printf("C++ swr_init failed:%d\n", ret);
+        return ret;
+    }
+    return 0;
+}
 
 AudioDecoder::AudioDecoder(int output_sample_rate, format_buffer_write write_buffer, bool localTest) {
 
@@ -179,7 +182,7 @@ int AudioDecoder::feed(uint8_t *raw_data, int raw_data_size) {
         _data_size -= ret; // 剩余数据的大小
 
         if (pkt->size) {
-            int decode_ret = decode_frame(context, pkt, decoded_frame);
+            int decode_ret = decodeFrame(context, pkt, decoded_frame);
         }
 
         if (_data_size < AUDIO_REFILL_THRESH) {
@@ -201,7 +204,7 @@ void AudioDecoder::stop() {
     /* flush the decoder */
     pkt->data = nullptr;
     pkt->size = 0;
-    decode_frame(context, pkt, decoded_frame);
+    decodeFrame(context, pkt, decoded_frame);
 
     /* print output pcm infomations, because there have no metadata of pcm */
     sfmt = context->sample_fmt;

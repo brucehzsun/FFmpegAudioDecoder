@@ -27,7 +27,9 @@ public:
 
     int feed(uint8_t *inbuf, int data_size);
 
-    int decode_frame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame);
+    int decodeFrame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame);
+
+    int initSwrContext();
 
     void stop();
 
