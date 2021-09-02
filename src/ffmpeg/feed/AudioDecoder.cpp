@@ -34,8 +34,8 @@ static int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat samp
     return -1;
 }
 
-static void decode(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame,
-                   FILE *outfile) {
+static void decode(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame, format_buffer_write write_buffer,
+                   void *opaque) {
     int i, ch;
     int ret, data_size;
 
@@ -62,46 +62,49 @@ static void decode(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame,
             exit(1);
         }
         for (i = 0; i < frame->nb_samples; i++)
-            for (ch = 0; ch < dec_ctx->channels; ch++)
-                fwrite(frame->data[ch] + data_size * i, 1, data_size, outfile);
+            for (ch = 0; ch < dec_ctx->channels; ch++) {
+//                fwrite(frame->data[ch] + data_size * i, 1, data_size, outfile);
+                (*write_buffer)(opaque, frame->data[ch] + data_size * i, data_size);
+            }
     }
 }
 
 
-AudioDecoder::AudioDecoder(int output_sample_rate, FILE *fp_open) {
+AudioDecoder::AudioDecoder(int output_sample_rate, format_buffer_write write_buffer, bool localTest) {
 
+    _write_buffer = write_buffer;
     pkt = av_packet_alloc();
-    this->f = fp_open;
 
     /* find the MPEG audio decoder */
-    codec = avcodec_find_decoder(AV_CODEC_ID_MP3);
+    const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_MP3);
     if (!codec) {
         fprintf(stderr, "Codec not found\n");
-        exit(1);
+        return;
     }
 
     parser = av_parser_init(codec->id);
     if (!parser) {
         fprintf(stderr, "Parser not found\n");
-        exit(1);
+        return;
     }
 
     c = avcodec_alloc_context3(codec);
     if (!c) {
         fprintf(stderr, "Could not allocate audio codec context\n");
-        exit(1);
+        return;
     }
 
     /* open it */
     if (avcodec_open2(c, codec, nullptr) < 0) {
         fprintf(stderr, "Could not open codec\n");
-        exit(1);
+        return;
     }
 
-    outfile = fopen("../data/music_feed.pcm", "wb");
-    if (!outfile) {
-        av_free(c);
-        exit(1);
+    if (localTest) {
+        outfile = fopen("../data/music_feed.pcm", "wb");
+        if (!outfile) {
+            av_free(c);
+        }
     }
 }
 
@@ -111,6 +114,7 @@ int AudioDecoder::feed(uint8_t *raw_data, int raw_data_size) {
     _data_size += raw_data_size;
     //使用双指针
     _data = _data_buffer;
+    int ret;
 
     while (_data_size > 0) {
         if (!decoded_frame) {
@@ -130,7 +134,7 @@ int AudioDecoder::feed(uint8_t *raw_data, int raw_data_size) {
         _data_size -= ret; // 剩余数据的大小
 
         if (pkt->size)
-            decode(c, pkt, decoded_frame, outfile);
+            decode(c, pkt, decoded_frame, _write_buffer, outfile);
 
         if (_data_size < AUDIO_REFILL_THRESH) {
 //            printf("data less AUDIO_REFILL_THRESH,_data_size=%d\n", _data_size);
@@ -151,7 +155,7 @@ void AudioDecoder::stop() {
     /* flush the decoder */
     pkt->data = nullptr;
     pkt->size = 0;
-    decode(c, pkt, decoded_frame, outfile);
+    decode(c, pkt, decoded_frame, _write_buffer, outfile);
 
     /* print output pcm infomations, because there have no metadata of pcm */
     sfmt = c->sample_fmt;
@@ -164,19 +168,21 @@ void AudioDecoder::stop() {
         sfmt = av_get_packed_sample_fmt(sfmt);
     }
 
-    n_channels = c->channels;
-    if ((ret = get_format_from_sample_fmt(&fmt, sfmt)) < 0)
+    const char *fmt;
+    int ret;
+    if ((ret = get_format_from_sample_fmt(&fmt, sfmt)) < 0) {
         printf("get_format_from_sample_fmt error\n");
+    }
 
     printf("Play the output audio file with the command:\n"
-           "ffplay -f %s -ac %d -ar %d %s\n",
-           fmt, n_channels, c->sample_rate,
-           outfilename);
+           "ffplay -f %s %d %d \n",
+           fmt, c->channels, c->sample_rate);
 }
 
 AudioDecoder::~AudioDecoder() {
-    fclose(outfile);
-    fclose(f);
+    if (outfile != nullptr) {
+        fclose(outfile);
+    }
 
     avcodec_free_context(&c);
     av_parser_close(parser);

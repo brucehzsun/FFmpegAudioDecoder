@@ -19,21 +19,21 @@ int read_buffer(void *opaque, uint8_t *buf, int buf_size) {
 }
 
 //Write File
-int write_buffer(void *outObj, uint8_t *buf, int buf_size) {
-//    printf("write_buffer\n");
-    FILE *fp_write = (FILE *) outObj;
-    if (!feof(fp_write)) {
-        int true_size = fwrite(buf, 1, buf_size, fp_write);
-        return true_size;
-    } else {
-        return -1;
+int write_buffer(void *opaque, uint8_t *buf, int buf_size) {
+    FILE *fp_write = (FILE *) opaque;
+    if (fp_write != nullptr) {
+        if (!feof(fp_write)) {
+            int true_size = fwrite(buf, 1, buf_size, fp_write);
+            return true_size;
+        } else {
+            return -1;
+        }
     }
+    return buf_size;
 }
 
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
-
     std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()
     );
@@ -43,9 +43,8 @@ int main() {
     const char *inputFileName = "../data/music.mp3";
     const char *out_filename = "../data/music-out.pcm";
     FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
-    FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
 
-    auto *pDecoder = new AudioDecoder(16000, fp_open);
+    auto *pDecoder = new AudioDecoder(16000, write_buffer, true);
 
     int buf_size = 1024 * 1;
     uint8_t inbuffer[buf_size];
@@ -60,7 +59,6 @@ int main() {
     std::chrono::milliseconds endms = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()
     );
-//    delete decoder;
     cout << "C++ finish, time = " << (endms.count() - startTime) << endl;
     return 0;
 }

@@ -16,9 +16,11 @@ extern "C" {
 #define AUDIO_INBUF_SIZE 20480
 #define AUDIO_REFILL_THRESH 4096
 
+typedef int (*format_buffer_write)(void *opaque, uint8_t *buf, int buf_size);
+
 class AudioDecoder {
 public:
-    AudioDecoder(int output_sample_rate, FILE *fp_open);
+    AudioDecoder(int output_sample_rate, format_buffer_write write_buffer, bool localTest);
 
     ~AudioDecoder();
 
@@ -32,17 +34,15 @@ private:
     int _data_size;
     uint8_t *_data;
 
-    const char *outfilename;
-    const AVCodec *codec;
     AVCodecContext *c = nullptr;
     AVCodecParserContext *parser = nullptr;
-    int len, ret;
-    FILE *f, *outfile;
     AVPacket *pkt;
     AVFrame *decoded_frame = nullptr;
     enum AVSampleFormat sfmt;
-    int n_channels = 0;
-    const char *fmt;
+    format_buffer_write _write_buffer;
+
+    //测试使用
+    FILE *outfile = nullptr;
 };
 
 #endif //FFMPEGAUDIODECODER_AUDIODECODER_H
