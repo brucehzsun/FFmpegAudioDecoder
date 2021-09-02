@@ -111,7 +111,7 @@ AudioDecoder::AudioDecoder(int output_sample_rate, FILE *fp_open) {
 void AudioDecoder::feed2(uint8_t *inbuf, int data_size) {
     /* decode until eof */
     data = inbuf;
-    data_size = fread(inbuf, 1, AUDIO_INBUF_SIZE, f);
+//    data_size = fread(inbuf, 1, AUDIO_INBUF_SIZE, f);
 
     while (data_size > 0) {
         if (!decoded_frame) {
