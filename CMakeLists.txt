@@ -23,13 +23,13 @@ set(LIBRARY_OUTPUT_PATH ${FFmpegAudioDecoder_SOURCE_DIR}/lib)
 
 set(SRCS
         #        src/ffmpeg/main.cpp
-                src/ffmpeg2/example.cpp
-#        src/ffmpeg2/main.cpp
-#        src/ffmpeg2/AudioDecoder.cpp
-#        src/ffmpeg2/AudioDecoder.h
+        #                src/ffmpeg2/example.cpp
+        src/ffmpeg2/main.cpp
+        src/ffmpeg2/AudioDecoder.cpp
+        src/ffmpeg2/AudioDecoder.h
         )
 
-include_directories(${FFmpegAudioDecoder_SOURCE_DIR}/src/ffmpeg2)
+#include_directories(${FFmpegAudioDecoder_SOURCE_DIR})
 
 
 IF (WIN32)

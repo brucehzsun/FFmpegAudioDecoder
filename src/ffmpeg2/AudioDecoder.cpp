@@ -7,8 +7,35 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define IO_BUF_SIZE (32768*1)
 
+static int get_format_from_sample_fmt(const char **fmt,
+                                      enum AVSampleFormat sample_fmt) {
+    int i;
+    struct sample_fmt_entry {
+        enum AVSampleFormat sample_fmt;
+        const char *fmt_be, *fmt_le;
+    } sample_fmt_entries[] = {
+            {AV_SAMPLE_FMT_U8,  "u8",    "u8"},
+            {AV_SAMPLE_FMT_S16, "s16be", "s16le"},
+            {AV_SAMPLE_FMT_S32, "s32be", "s32le"},
+            {AV_SAMPLE_FMT_FLT, "f32be", "f32le"},
+            {AV_SAMPLE_FMT_DBL, "f64be", "f64le"},
+    };
+    *fmt = NULL;
+
+    for (i = 0; i < FF_ARRAY_ELEMS(sample_fmt_entries); i++) {
+        struct sample_fmt_entry *entry = &sample_fmt_entries[i];
+        if (sample_fmt == entry->sample_fmt) {
+            *fmt = AV_NE(entry->fmt_be, entry->fmt_le);
+            return 0;
+        }
+    }
+
+    fprintf(stderr,
+            "sample format %s is not supported as output format\n",
+            av_get_sample_fmt_name(sample_fmt));
+    return -1;
+}
 
 static void decode(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame,
                    FILE *outfile) {
@@ -18,8 +45,8 @@ static void decode(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame,
     /* send the packet with the compressed data to the decoder */
     ret = avcodec_send_packet(dec_ctx, pkt);
     if (ret < 0) {
-        fprintf(stderr, "Error submitting the packet to the decoder\n");
-        exit(1);
+        fprintf(stdout, "Error submitting the packet to the decoder\n");
+        return;
     }
 
     /* read all the output frames (in general there may be any number of them */
@@ -44,11 +71,10 @@ static void decode(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame,
 }
 
 
-AudioDecoder::AudioDecoder(int output_sample_rate) {
-    printf("C++ AudioDecoder\n");
-    outfilename = "test.pcm";
+AudioDecoder::AudioDecoder(int output_sample_rate, FILE *fp_open) {
 
     pkt = av_packet_alloc();
+    this->f = fp_open;
 
     /* find the MPEG audio decoder */
     codec = avcodec_find_decoder(AV_CODEC_ID_MP3);
@@ -75,49 +101,17 @@ AudioDecoder::AudioDecoder(int output_sample_rate) {
         exit(1);
     }
 
-    outfile = fopen(outfilename, "wb");
+    outfile = fopen("../data/out_2.pcm", "wb");
     if (!outfile) {
         av_free(c);
         exit(1);
     }
 }
-//
-//int AudioDecoder::feed(char *buf) {
-//
-//    // 循环读取一份音频压缩数据
-//    while (av_read_frame(avFormatContext, avpacket) == 0) {
-//        //判定是否是音频流
-//        /** 第七步音频解码 */
-//        //1、发送一帧音频压缩数据包->音频压缩数据帧
-//        if ((ret = avcodec_send_packet(avCodecContex, avpacket)) != 0) {
-//            printf("C++ avcodec_send_packet ret = %d\n", ret);
-//            return ret;
-//        }
-//
-//        //2、解码一帧音频压缩数据包->得到->一帧音频采样数据->音频采样数据帧
-//        if (avcodec_receive_frame(avCodecContex, avframe) == 0) {
-//            //3、类型转换(音频采样数据格式有很多种类型)
-//            if ((ret = swr_convert(swr_context, &out_buffer, IO_BUF_SIZE, (const uint8_t **) avframe->data,
-//                                   avframe->nb_samples)) < 0) {
-//                printf("C++ swr_convert error \n");
-//                return ret;
-//            }
-//
-//            //5、写入文件(你知道要写多少吗？)
-//            int resampled_data_size = av_samples_get_buffer_size(nullptr, out_nb_channels, ret, AV_SAMPLE_FMT_S16, 1);
-//            if (resampled_data_size < 0) {
-//                printf("C++ av_samples_get_buffer_size error:%d\n", resampled_data_size);
-//                return resampled_data_size;
-//            }
-//            (*write_buffer)(opaque_out, out_buffer, resampled_data_size);
-//        }
-//    }
-//}
 
-void AudioDecoder::feed2(char *inbuf, int data_size) {
+void AudioDecoder::feed2(uint8_t *inbuf, int data_size) {
     /* decode until eof */
     data = inbuf;
-    int ret;
+    data_size = fread(inbuf, 1, AUDIO_INBUF_SIZE, f);
 
     while (data_size > 0) {
         if (!decoded_frame) {
@@ -127,7 +121,9 @@ void AudioDecoder::feed2(char *inbuf, int data_size) {
             }
         }
 
-        ret = av_parser_parse2(parser, c, &pkt->data, &pkt->size, data, data_size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
+        ret = av_parser_parse2(parser, c, &pkt->data, &pkt->size,
+                               data, data_size,
+                               AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
         if (ret < 0) {
             fprintf(stderr, "Error while parsing\n");
             exit(1);
@@ -139,38 +135,19 @@ void AudioDecoder::feed2(char *inbuf, int data_size) {
             decode(c, pkt, decoded_frame, outfile);
 
         if (data_size < AUDIO_REFILL_THRESH) {
-//            memmove(inbuf, data, data_size);
-//            data = inbuf;
-//            len = fread(data + data_size, 1, AUDIO_INBUF_SIZE - data_size, f);
-//            if (len > 0)
-//                data_size += len;
-            break;
+            memmove(inbuf, data, data_size);
+            data = inbuf;
+            len = fread(data + data_size, 1,
+                        AUDIO_INBUF_SIZE - data_size, f);
+            if (len > 0)
+                data_size += len;
         }
     }
-
-    /* flush the decoder */
-    pkt->data = NULL;
-    pkt->size = 0;
-    decode(c, pkt, decoded_frame, outfile);
-
-    /* print output pcm infomations, because there have no metadata of pcm */
-    sfmt = c->sample_fmt;
-
-    if (av_sample_fmt_is_planar(sfmt)) {
-        const char *packed = av_get_sample_fmt_name(sfmt);
-        printf("Warning: the sample format the decoder produced is planar "
-               "(%s). This example will output the first channel only.\n",
-               packed ? packed : "?");
-        sfmt = av_get_packed_sample_fmt(sfmt);
-    }
-
-    n_channels = c->channels;
-    if ((ret = get_format_from_sample_fmt(&fmt, sfmt)) < 0)
-        goto end;
+    printf("feed2 finish !\n");
 }
 
 void AudioDecoder::stop() {
-    /* flush the decoder */
+/* flush the decoder */
     pkt->data = NULL;
     pkt->size = 0;
     decode(c, pkt, decoded_frame, outfile);
@@ -188,13 +165,15 @@ void AudioDecoder::stop() {
 
     n_channels = c->channels;
     if ((ret = get_format_from_sample_fmt(&fmt, sfmt)) < 0)
-        goto end;
+        printf("get_format_from_sample_fmt error\n");
 
     printf("Play the output audio file with the command:\n"
            "ffplay -f %s -ac %d -ar %d %s\n",
            fmt, n_channels, c->sample_rate,
            outfilename);
+}
 
+AudioDecoder::~AudioDecoder() {
     fclose(outfile);
     fclose(f);
 

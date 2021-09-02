@@ -18,11 +18,11 @@ extern "C" {
 
 class AudioDecoder {
 public:
-    AudioDecoder(int output_sample_rate);
+    AudioDecoder(int output_sample_rate, FILE *fp_open);
 
     ~AudioDecoder();
 
-    void feed2(char *inbuf, int data_size);
+    void feed2(uint8_t *inbuf, int data_size);
 
     void stop();
 
@@ -34,7 +34,7 @@ private:
     int len, ret;
     FILE *f, *outfile;
     uint8_t inbuf[AUDIO_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
-    char *data;
+    uint8_t *data;
     size_t data_size;
     AVPacket *pkt;
     AVFrame *decoded_frame = nullptr;

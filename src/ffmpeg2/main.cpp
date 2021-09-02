@@ -45,9 +45,9 @@ int main() {
     FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
     FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
 
-    auto *pDecoder = new AudioDecoder(16000);
+    auto *pDecoder = new AudioDecoder(16000, fp_open);
 
-    char *inbuffer;
+    uint8_t *inbuffer;
     int buf_size = 1024;
     while (!feof(fp_open)) {
         int true_size = fread(inbuffer, 1, buf_size, fp_open);
