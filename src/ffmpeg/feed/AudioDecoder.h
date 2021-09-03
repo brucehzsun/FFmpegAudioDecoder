@@ -14,7 +14,7 @@ extern "C" {
 }
 
 #define AUDIO_INBUF_SIZE 20480
-#define AUDIO_REFILL_THRESH 4096
+#define AUDIO_REFILL_THRESH 2048
 #define IO_BUF_SIZE (32768*1)
 
 class AudioDecoder {

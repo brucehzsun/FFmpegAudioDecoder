@@ -4,7 +4,10 @@ project(FFmpegAudioDecoder)
 set(Boost_USE_STATIC_LIBS ON)
 find_package(LibXml2 REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(ICONV MODULE REQUIRED)
+#find_package(ICONV MODULE REQUIRED)
+
+SET(CMAKE_BUILD_TYPE "Debug")
+#SET(CMAKE_BUILD_TYPE "Release")
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
