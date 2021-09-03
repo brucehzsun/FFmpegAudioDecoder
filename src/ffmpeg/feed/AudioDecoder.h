@@ -19,13 +19,13 @@ extern "C" {
 
 class AudioDecoder {
 public:
-    AudioDecoder(int output_sample_rate);
+    explicit AudioDecoder(int output_sample_rate);
 
     ~AudioDecoder();
 
     int feed(uint8_t *inbuf, int data_size, uint8_t **out_buffer);
 
-    int decodeFrame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame, uint8_t **out_buffer, int out_buffer_size);
+    int decodeFrame(uint8_t **out_buffer, int out_buffer_size);
 
     int initSwrContext();
 
@@ -33,19 +33,18 @@ public:
 
 private:
     //输入数据的buffer
-    uint8_t _data_buffer[AUDIO_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
-    int _data_size;
-    uint8_t *_data;
+    uint8_t *_data_buffer = nullptr;
+    int _data_size = 0;
+    uint8_t *_data = nullptr;
 
     //缓冲区大小
-    uint8_t *swr_buffer;
+    uint8_t *swr_buffer = nullptr;
 
     AVCodecContext *context = nullptr;
     AVCodecParserContext *parser = nullptr;
     AVPacket *pkt;
     AVFrame *decoded_frame = nullptr;
-    enum AVSampleFormat sfmt;
-    SwrContext *swr_context;
+    SwrContext *swr_context = nullptr;
 
     //测试使用
     int out_nb_channels;

@@ -3,10 +3,6 @@
 //
 
 #include "AudioDecoder.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 
 static int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat sample_fmt) {
     int i;
@@ -34,11 +30,10 @@ static int get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat samp
     return -1;
 }
 
-int AudioDecoder::decodeFrame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame, uint8_t **out_buffer,
-                              int out_buffer_size) {
+int AudioDecoder::decodeFrame(uint8_t **out_buffer,int out_buffer_size) {
 
     /* send the packet with the compressed data to the decoder */
-    int ret = avcodec_send_packet(dec_ctx, pkt);
+    int ret = avcodec_send_packet(context, pkt);
     if (ret < 0) {
         fprintf(stdout, "Error submitting the packet to the decoder\n");
         return -100;
@@ -50,7 +45,7 @@ int AudioDecoder::decodeFrame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *f
 
     /* read all the output frames (in general there may be any number of them */
     while (ret >= 0) {
-        ret = avcodec_receive_frame(dec_ctx, frame);
+        ret = avcodec_receive_frame(context, decoded_frame);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
             return out_buffer_size;
         else if (ret < 0) {
@@ -59,8 +54,8 @@ int AudioDecoder::decodeFrame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *f
         }
 
         //3、类型转换(音频采样数据格式有很多种类型)
-        if ((ret = swr_convert(swr_context, &swr_buffer, IO_BUF_SIZE, (const uint8_t **) frame->data,
-                               frame->nb_samples)) < 0) {
+        if ((ret = swr_convert(swr_context, &swr_buffer, IO_BUF_SIZE, (const uint8_t **) decoded_frame->data,
+                               decoded_frame->nb_samples)) < 0) {
             printf("C++ swr_convert error \n");
             return ret;
         }
@@ -111,6 +106,7 @@ int AudioDecoder::initSwrContext() {
 
 AudioDecoder::AudioDecoder(int output_sample_rate) {
 
+    _data_buffer = new uint8_t[AUDIO_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
     this->_output_sample_rate = output_sample_rate;
     pkt = av_packet_alloc();
 
@@ -178,7 +174,7 @@ int AudioDecoder::feed(uint8_t *raw_data, int raw_data_size, uint8_t **out_buffe
         _data_size -= ret; // 剩余数据的大小
 
         if (pkt->size) {
-            out_buffer_size = decodeFrame(context, pkt, decoded_frame, out_buffer, out_buffer_size);
+            out_buffer_size = decodeFrame(out_buffer, out_buffer_size);
             if (out_buffer_size < 0) {
                 fprintf(stderr, "decodeFrame failed ret = %d\n", out_buffer_size);
             }
@@ -204,10 +200,10 @@ int AudioDecoder::stop(uint8_t **out_buffer) {
     int out_buffer_size = 0;
     pkt->data = nullptr;
     pkt->size = 0;
-    out_buffer_size = decodeFrame(context, pkt, decoded_frame, out_buffer, out_buffer_size);
+    out_buffer_size = decodeFrame(out_buffer, out_buffer_size);
 
     /* print output pcm infomations, because there have no metadata of pcm */
-    sfmt = context->sample_fmt;
+    enum AVSampleFormat sfmt = context->sample_fmt;
 
     if (av_sample_fmt_is_planar(sfmt)) {
         const char *packed = av_get_sample_fmt_name(sfmt);
@@ -232,7 +228,7 @@ int AudioDecoder::stop(uint8_t **out_buffer) {
 
 AudioDecoder::~AudioDecoder() {
 
-
+    delete[] _data_buffer;
     av_free(swr_buffer);
     swr_free(&swr_context);
     avcodec_free_context(&context);
