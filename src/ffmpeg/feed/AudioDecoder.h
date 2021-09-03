@@ -17,21 +17,19 @@ extern "C" {
 #define AUDIO_REFILL_THRESH 4096
 #define IO_BUF_SIZE (32768*1)
 
-typedef int (*format_buffer_write)(void *opaque, uint8_t *buf, int buf_size);
-
 class AudioDecoder {
 public:
-    AudioDecoder(int output_sample_rate, format_buffer_write write_buffer, bool localTest);
+    AudioDecoder(int output_sample_rate);
 
     ~AudioDecoder();
 
-    int feed(uint8_t *inbuf, int data_size);
+    int feed(uint8_t *inbuf, int data_size, uint8_t **out_buffer);
 
-    int decodeFrame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame);
+    int decodeFrame(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame, uint8_t **out_buffer, int out_buffer_size);
 
     int initSwrContext();
 
-    void stop();
+    int stop(uint8_t **out_buffer);
 
 private:
     //输入数据的buffer
@@ -40,18 +38,16 @@ private:
     uint8_t *_data;
 
     //缓冲区大小
-    uint8_t *out_buffer;
+    uint8_t *swr_buffer;
 
     AVCodecContext *context = nullptr;
     AVCodecParserContext *parser = nullptr;
     AVPacket *pkt;
     AVFrame *decoded_frame = nullptr;
     enum AVSampleFormat sfmt;
-    format_buffer_write _write_buffer;
     SwrContext *swr_context;
 
     //测试使用
-    FILE *outfile = nullptr;
     int out_nb_channels;
     int _output_sample_rate;
 };
