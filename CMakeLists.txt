@@ -11,7 +11,7 @@ SET(CMAKE_BUILD_TYPE "Debug")
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+#CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if (COMPILER_SUPPORTS_CXX11)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif (COMPILER_SUPPORTS_CXX0X)
@@ -30,7 +30,7 @@ set(SRCS
         src/ffmpeg/feed/main.cpp
         src/ffmpeg/feed/AudioDecoder.cpp
         src/ffmpeg/feed/AudioDecoder.h
-        )
+        src/ffmpeg/feed2/transcode_aac.cpp)
 
 #include_directories(${FFmpegAudioDecoder_SOURCE_DIR})
 
@@ -39,8 +39,8 @@ IF (WIN32)
     MESSAGE(STATUS "Now is windows")
 ELSEIF (APPLE)
     MESSAGE(STATUS "Now is Apple systens.")
-    include_directories(/Users/brucesun/opt/anaconda3/include)
-    link_directories(/Users/brucesun/opt/anaconda3/lib/)
+    include_directories(/usr/local/include)
+    link_directories(/usr/local/lib)
 ELSEIF (UNIX)
     MESSAGE(STATUS "Now is UNIX-like OS's.")
     include_directories(/usr/local/ffmpeg/include/)
