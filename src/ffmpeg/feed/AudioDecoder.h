@@ -14,41 +14,42 @@ extern "C" {
 }
 
 #define AUDIO_INBUF_SIZE 20480
-#define AUDIO_REFILL_THRESH 2048
-#define IO_BUF_SIZE (32768*1)
+#define AUDIO_REFILL_THRESH 4096
+//缓冲区大小，最大支持1秒钟的mp3数据，44100采样率，16le * 2字节
+#define IO_BUF_SIZE (44100*32)
 
 class AudioDecoder {
-public:
-    explicit AudioDecoder(int output_sample_rate);
+ public:
+  explicit AudioDecoder(int output_sample_rate);
 
-    ~AudioDecoder();
+  ~AudioDecoder();
 
-    int feed(uint8_t *inbuf, int data_size, uint8_t **out_buffer);
+  int feed(uint8_t *inbuf, int data_size, uint8_t **out_buffer);
 
-    int decodeFrame(uint8_t **out_buffer, int out_buffer_size);
+  int decodeFrame(uint8_t **out_buffer, int out_buffer_size);
 
-    int initSwrContext();
+  int initSwrContext();
 
-    int stop(uint8_t **out_buffer);
+  int stop(uint8_t **out_buffer);
 
-private:
-    //输入数据的buffer
-    uint8_t *_data_buffer = nullptr;
-    int _data_size = 0;
-    uint8_t *_data = nullptr;
+ private:
+  //输入数据的buffer
+  uint8_t *_data_buffer = nullptr;
+  int _data_size = 0;
+  uint8_t *_data = nullptr;
 
-    //缓冲区大小
-    uint8_t *swr_buffer = nullptr;
+  //缓冲区大小
+  uint8_t *swr_buffer = nullptr;
 
-    AVCodecContext *context = nullptr;
-    AVCodecParserContext *parser = nullptr;
-    AVPacket *pkt;
-    AVFrame *decoded_frame = nullptr;
-    SwrContext *swr_context = nullptr;
+  AVCodecContext *context = nullptr;
+  AVCodecParserContext *parser = nullptr;
+  AVPacket *pkt;
+  AVFrame *decoded_frame = nullptr;
+  SwrContext *swr_context = nullptr;
 
-    //测试使用
-    int out_nb_channels;
-    int _output_sample_rate;
+  //测试使用
+  int out_nb_channels;
+  int _output_sample_rate;
 };
 
 #endif //FFMPEGAUDIODECODER_AUDIODECODER_H
