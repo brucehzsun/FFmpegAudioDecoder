@@ -8,3 +8,11 @@
 # 解码后的pcm文件可以使用 Audacity 播放器播放
 
 新增非流式解码，通过feed小段数据进行解码；
+
+一次性读取
+true_size=128811
+
+read_buffer true_size=32768 xxxxx
+read_buffer true_size=32768 xxxxx
+read_buffer true_size=32768 xxxxx
+read_buffer true_size=30507 xxxxx

@@ -35,7 +35,7 @@ set(EXECUTABLE_OUTPUT_PATH ${FFmpegAudioDecoder_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${FFmpegAudioDecoder_SOURCE_DIR}/lib)
 
 set(SRCS
-        src/ffmpeg/demo3/stream_demo.cpp
+#        src/ffmpeg/demo3/stream_demo.cpp
 #        src/ffmpeg/demo3/ffcodec.cpp
 #        src/ffmpeg/demo3/ffdecoder.h
 #        src/ffmpeg/demo3/ffdecoder.cpp
@@ -58,9 +58,9 @@ set(SRCS
 
 
 #        src/ffmpeg/feed2/transcode_aac.cpp
-#        src/ffmpeg/stream/ffmpeg_decoder.h
-#        src/ffmpeg/stream/ffmpeg_decoder.cpp
-#        src/ffmpeg/stream/main.cpp
+        src/ffmpeg/stream/ffmpeg_decoder.h
+        src/ffmpeg/stream/ffmpeg_decoder.cpp
+        src/ffmpeg/stream/main.cpp
 #        src/ffmpeg/feed2/example.cpp
 #        src/ffmpeg/feed2/decode_filter_audio.cpp
         )

@@ -23,7 +23,7 @@
 #include "ffmpeg_decoder.h"
 #include <iostream>
 
-#define IO_BUF_SIZE (16000*1)
+#define IO_BUF_SIZE (32768*4)
 
 using namespace std;
 
@@ -59,6 +59,10 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
     return -3;
   }
 
+  const char *input_file = "data/test.m4a";
+  const char *out_file = "data/test_output_m4a.pcm";
+  FILE *fp_pcm = fopen(out_file, "wb");
+
   unsigned char *inbuffer = (unsigned char *) av_malloc(IO_BUF_SIZE);
   if (inbuffer == nullptr) {
     printf("C++ av malloc failed\n");
@@ -71,11 +75,13 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
     return -2;
   }
 
-//  format_ctx->pb = avio_in; // 赋值自定义的IO结构体
-//  format_ctx->flags = AVFMT_FLAG_CUSTOM_IO; // 指定为自定义
+  format_ctx->pb = avio_cxt; // 赋值自定义的IO结构体
+  format_ctx->flags = AVFMT_FLAG_CUSTOM_IO; // 指定为自定义
 
   // 将输入流媒体流链接为封装结构体的句柄，将url句柄挂载至format_ctx结构里，之后ffmpeg即可对format_ctx进行操作
-  if ((ret = avformat_open_input(&format_ctx, "wtf", nullptr, nullptr)) < 0) {
+  ret = avformat_open_input(&format_ctx, nullptr, nullptr, nullptr);
+//  ret = avformat_open_input(&format_ctx, input_file, nullptr, nullptr);
+  if (ret < 0) {
     printf("C++ open fail:%d\n", ret);
     return ret;
   }
@@ -165,7 +171,7 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
   }
 
   // 音频格式  输入的采样设置参数
-  AVSampleFormat inFormat =;
+  AVSampleFormat inFormat = av_codec_ctx->sample_fmt;
 
   // 输入采样率
   int inSampleRate;
@@ -215,8 +221,13 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
 
   /************ Audio Convert ************/
   // 循环读取一份音频压缩数据
-  while (av_read_frame(format_ctx, packet) == 0) {
-
+//  while (av_read_frame(format_ctx, packet) == 0) {
+  while (1) {
+    ret = av_read_frame(format_ctx, packet); // 读取下一帧数据
+    if (ret < 0) {
+      fprintf(stderr, "Error submitting the packet to the decoder\n");
+      return ret;
+    }
     if (packet->stream_index == audio_stream_index) {
       /** 第七步音频解码 */
       //1、发送一帧音频压缩数据包->音频压缩数据帧
@@ -227,9 +238,9 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
         return ret;
       }
 
-      while (ret >= 0) {
+      while ((ret = avcodec_receive_frame(av_codec_ctx, frame)) >= 0) {
         //2、解码一帧音频压缩数据包->得到->一帧音频采样数据->音频采样数据帧
-        ret = avcodec_receive_frame(av_codec_ctx, frame); // 接收获取解码收的数据
+        // 接收获取解码收的数据
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
           av_packet_unref(packet);
           break;
@@ -254,7 +265,10 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
           printf("C++ av_samples_get_buffer_size error:%d\n", resampled_data_size);
           //                return resampled_data_size;
         } else {
-          (*write_buffer)(opaque_out, out_buffer, resampled_data_size);
+          printf("C++ write_buffer resampled_data_size:%d\n", resampled_data_size);
+//          (*write_buffer)(opaque_out, out_buffer, resampled_data_size);
+          // 写入文件
+          fwrite(out_buffer, 1, resampled_data_size, fp_pcm);
         }
       }
     }

@@ -136,6 +136,7 @@ int main(int argc, char **argv) {
   /************ Audio Convert ************/
   while (1) {
     ret = av_read_frame(format_ctx, packet); // 读取下一帧数据
+    printf(">>>>>> av_read_frame = %d ",ret);
 
     if (ret >= 0 && packet->stream_index == audio_stream_index) {
       ret = avcodec_send_packet(ad_codec_ctx, packet); // 解码
