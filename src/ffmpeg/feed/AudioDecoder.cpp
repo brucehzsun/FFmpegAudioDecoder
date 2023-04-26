@@ -39,7 +39,10 @@ AudioDecoder::AudioDecoder(int output_sample_rate) {
   this->out_nb_channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_MONO);
 
   /* find the MPEG audio decoder */
-  const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_MP3);
+//  const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_MP3);
+//  const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_OPUS);
+//  const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_AMR_NB);
+  const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_AAC);
   if (!codec) {
     fprintf(stderr, "Codec not found\n");
     return;
@@ -180,6 +183,8 @@ int AudioDecoder::initSwrContext() {
   //设置转码参数
   swr_context = swr_alloc_set_opts(swr_context, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_S16, _output_sample_rate,
                                    in_ch_layout, context->sample_fmt, context->sample_rate, 0, nullptr);
+//  swr_context = swr_alloc_set_opts(swr_context, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_S16, _output_sample_rate,
+//                                   in_ch_layout, context->sample_fmt, 44100, 0, nullptr);
   if (swr_context == nullptr) {
     printf("C++ swr_alloc_set_opts failed\n");
     return -201;

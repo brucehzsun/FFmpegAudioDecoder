@@ -13,14 +13,14 @@ int main() {
   long startTime = ms.count();
   std::cout << ms.count() << std::endl;
 
-  const char *inputFileName = "data/music.mp3";
-  const char *out_filename = "data/music_out_feed_16k.pcm";
+  const char *inputFileName = "data/test.m4a";
+  const char *out_filename = "data/test_feed_m4a_111.pcm";
   FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
   FILE *fp_out = fopen(out_filename, "wb");
 
   auto *pDecoder = new AudioDecoder(16000);
 
-  int buf_size = 1024 * 32;
+  int buf_size = 1024;
   uint8_t inbuffer[buf_size];
   auto *p_out_buffer = new uint8_t[buf_size * 16];
 

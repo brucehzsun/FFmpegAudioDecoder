@@ -1,4 +1,4 @@
-#include "ffmpeg_decoder.cpp"
+#include "ffmpeg_decoder.h"
 
 #include <iostream>
 #include <chrono>
@@ -40,8 +40,8 @@ int main() {
     long startTime = ms.count();
     std::cout << ms.count() << std::endl;
 
-    const char *inputFileName = "../data/music.mp3";
-    const char *out_filename = "../data/music-out.pcm";
+    const char *inputFileName = "data/test.mp3";
+    const char *out_filename = "data/test_out_mp3.wav";
     FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
     FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
 

@@ -30,13 +30,13 @@ private:
 private:
     AVFormatContext *avFormatContext;
     AVCodecContext *avCodecContex;
-    AVCodec *avcodec;
+    const AVCodec *avcodec;
     AVPacket *avpacket;
     SwrContext *swr_context;
     uint8_t *out_buffer;
     AVFrame *avframe;
     AVIOContext *avio_in;
-    unsigned char *inbuffer;
+    char *inbuffer;
 };
 
 #endif /*__AILABS_AUDIODEC_FFMPEG_DECODER_H__*/
