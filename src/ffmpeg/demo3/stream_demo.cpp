@@ -10,13 +10,9 @@ extern "C"
 
 int main(int argc, char **argv) {
 
-  avformat_network_init(); // 初始化网络模块
-
   int index = 0;
-  // const char *url = "rtsp://172.16.96.117:8554/live/test"; // rtsp地址
-  // const char* url = "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov";
-//  const char *file = "data/test.m4a";
-//  const char *out_file = "data/test_output_m4a.pcm";
+  const char *input_file = "data/test.m4a";
+  const char *out_file = "data/test_output_m4a.pcm";
 
 //  const char *file = "data/test.ogg";
 //  const char *out_file = "data/test_output_opus.pcm";
@@ -24,23 +20,18 @@ int main(int argc, char **argv) {
 //  const char *file = "data/test.amr";
 //  const char *out_file = "data/test_output_amr.pcm";
 
-  const char *file = "data/test.mp3";
-  const char *out_file = "data/test_output_mp3.pcm";
+//  const char *file = "data/test.mp3";
+//  const char *out_file = "data/test_output_mp3.pcm";
 
+  // 创建pcm的文件对象
   FILE *fp_pcm = fopen(out_file, "wb");
 
   AVFormatContext *format_ctx = avformat_alloc_context(); // 定义封装结构体
 
-  AVDictionary *options = NULL;
-  av_dict_set(&options, "rtsp_transport", "tcp", 0); // 以tcp方式打开
-  // av_dict_set(&options, "stimeout", "20000000", 0); // 设置超时断开连接时间
-  // av_dict_set(&options, "max_delay", "500000", 0);
-  // av_dict_set(&options, "buffer_size", "1024000", 0);
-
   /* 将输入流媒体流链接为封装结构体的句柄，将url句柄挂载至format_ctx结构里，之后ffmpeg即可对format_ctx进行操作 */
-  int ret = avformat_open_input(&format_ctx, file, nullptr, &options);
+  int ret = avformat_open_input(&format_ctx, input_file, nullptr, nullptr);
   if (ret != 0) {
-    fprintf(stderr, "Fail to open url: %s, return value: %d\n", file, ret);
+    fprintf(stderr, "Fail to open url: %s, return value: %d\n", input_file, ret);
     return -1;
   }
 
@@ -74,12 +65,12 @@ int main(int argc, char **argv) {
   }
 
   // Dump valid information onto standard error
-  av_dump_format(format_ctx, 0, file, false);
+  av_dump_format(format_ctx, 0, input_file, false);
 
   /* 查找audio解码器 */
   /* 首先从输入的AVFormatContext中得到stream,然后从stream中根据编码器的CodeID获得对应的Decoder */
-  AVCodecParameters *ad_codecpar = format_ctx->streams[audio_stream_index]->codecpar;
-  const AVCodec *ad_codec = avcodec_find_decoder(ad_codecpar->codec_id);
+  AVCodecParameters *ad_codec_params = format_ctx->streams[audio_stream_index]->codecpar;
+  const AVCodec *ad_codec = avcodec_find_decoder(ad_codec_params->codec_id);
   if (!ad_codec) {
     fprintf(stderr, "fail to avcodec_find_decoder\n");
     return -1;
@@ -88,27 +79,19 @@ int main(int argc, char **argv) {
   /* use avcodec_alloc_context3() and avcodec_parameters_to_context() couldn't get all complete information, Error will be reported when decoding aac or mp4 */
   // AVCodecContext *ad_codec_ctx = avcodec_alloc_context3(ad_codec);
 
-  AVCodecParameters *ad_codec_params = format_ctx->streams[audio_stream_index]->codecpar;
   AVCodecContext *ad_codec_ctx = avcodec_alloc_context3(ad_codec);
   avcodec_parameters_to_context(ad_codec_ctx, ad_codec_params);
 
-
-//  AVCodecContext *ad_codec_ctx = format_ctx->streams[audio_stream_index]->codec;
-//  if (!ad_codec_ctx) {
-//    fprintf(stderr, "Could not allocate audio codec context\n");
-//    return -1;
-//  }
-
   /* 打开audio解码器 */
-  if (ret = avcodec_open2(ad_codec_ctx, ad_codec, nullptr) < 0) {
+  ret = avcodec_open2(ad_codec_ctx, ad_codec, nullptr);
+  if (ret < 0) {
     fprintf(stderr, "Could not open codec: %d\n", ret);
     return -1;
   }
   printf("decodec name: %s\n", ad_codec->name);
 
-  // avcodec_parameters_to_context(ad_codec_ctx, format_ctx->streams[audio_stream_index]->codecpar);
-
-  AVFrame *frame = av_frame_alloc(); //用于存放解码后的数据
+  //用于存放解码后的数据
+  AVFrame *frame = av_frame_alloc();
   if (!frame) {
     fprintf(stderr, "Could not allocate video frame\n");
     return -1;
@@ -146,12 +129,11 @@ int main(int argc, char **argv) {
   // 获取声道数量
   int outChannelCount = av_get_channel_layout_nb_channels(out_ch_layout);
 
-  // 设置音频缓冲区间 16bit   44100  PCM数据, 双声道
-  uint8_t *out_buffer = (uint8_t *) av_malloc(1 * 16000);
-  // 创建pcm的文件对象
+  // 设置音频缓冲区间 16bit   16000  PCM数据, 单声道
+  uint8_t *out_buffer = (uint8_t *) av_malloc(1 * outSampleRate);
+
 
   /************ Audio Convert ************/
-
   while (1) {
     ret = av_read_frame(format_ctx, packet); // 读取下一帧数据
 
@@ -174,14 +156,10 @@ int main(int argc, char **argv) {
         }
 
         // 将每一帧数据转换成pcm
-        swr_convert(swrContext, &out_buffer, 2 * 44100,
+        swr_convert(swrContext, &out_buffer, 1 * 16000,
                     (const uint8_t **) frame->data, frame->nb_samples);
         // 获取实际的缓存大小（补充：第三个参数不应该是输入的样本数，而是重采样的样本数）
-        int out_buffer_size = av_samples_get_buffer_size(NULL,
-                                                         outChannelCount,
-                                                         frame->nb_samples * outSampleRate / inSampleRate,
-                                                         outFormat,
-                                                         1);
+        int out_buffer_size = av_samples_get_buffer_size(NULL,outChannelCount,frame->nb_samples * outSampleRate / inSampleRate,outFormat,1);
 
         printf("index:%5d\t pts:%lld\t packet size:%d\n", index++, packet->pts, packet->size);
         // 写入文件

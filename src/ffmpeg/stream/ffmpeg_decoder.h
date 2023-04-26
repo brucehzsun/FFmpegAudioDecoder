@@ -17,26 +17,21 @@ typedef int (*format_buffer_read)(void *opaque_in, uint8_t *buf, int buf_size);
 typedef int (*format_buffer_write)(void *opaque_out, uint8_t *buf, int buf_size);
 
 class FFmpegDecoder {
-public:
-    FFmpegDecoder();
+ public:
+  FFmpegDecoder();
 
-    ~FFmpegDecoder();
+  ~FFmpegDecoder();
 
-    int start(format_buffer_read read_buffer, void *opaque_in, format_buffer_write write_buffer, void *opaque_out,
-              int output_sample_rate);
+  int start(format_buffer_read read_buffer,
+            void *opaque_in,
+            format_buffer_write write_buffer,
+            void *opaque_out,
+            int output_sample_rate);
 
-private:
+ private:
 
-private:
-    AVFormatContext *avFormatContext;
-    AVCodecContext *avCodecContex;
-    const AVCodec *avcodec;
-    AVPacket *avpacket;
-    SwrContext *swr_context;
-    uint8_t *out_buffer;
-    AVFrame *avframe;
-    AVIOContext *avio_in;
-    char *inbuffer;
+ private:
+
 };
 
 #endif /*__AILABS_AUDIODEC_FFMPEG_DECODER_H__*/
