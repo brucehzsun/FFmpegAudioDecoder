@@ -19,8 +19,8 @@ SET(CMAKE_BUILD_TYPE "Debug")
 #)
 
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX11)
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread -fPIC")
+#CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX11)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread -fPIC")
 #CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 #if (COMPILER_SUPPORTS_CXX11)
 #    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -35,35 +35,35 @@ set(EXECUTABLE_OUTPUT_PATH ${FFmpegAudioDecoder_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${FFmpegAudioDecoder_SOURCE_DIR}/lib)
 
 set(SRCS
-#        src/ffmpeg/demo3/stream_demo.cpp
-#        src/ffmpeg/demo3/ffcodec.cpp
-#        src/ffmpeg/demo3/ffdecoder.h
-#        src/ffmpeg/demo3/ffdecoder.cpp
-#        src/ffmpeg/demo3/ffencoder.h
-#        src/ffmpeg/demo3/ffencoder.cpp
-#        src/ffmpeg/demo3/ffheader.h
-#        src/ffmpeg/demo3/fflog.h
-#        src/ffmpeg/demo3/ffparam.h
-#        src/ffmpeg/demo3/TestCodec.cpp
-
+        #        src/ffmpeg/demo3/stream_demo.cpp
+        #        src/ffmpeg/demo3/ffcodec.cpp
+        #        src/ffmpeg/demo3/ffdecoder.h
+        #        src/ffmpeg/demo3/ffdecoder.cpp
+        #        src/ffmpeg/demo3/ffencoder.h
+        #        src/ffmpeg/demo3/ffencoder.cpp
+        #        src/ffmpeg/demo3/ffheader.h
+        #        src/ffmpeg/demo3/fflog.h
+        #        src/ffmpeg/demo3/ffparam.h
+        #        src/ffmpeg/demo3/TestCodec.cpp
 
 
         #        src/ffmpeg/main.cpp
         #                src/ffmpeg2/example.cpp
-#        src/ffmpeg/feed/main.cpp
-#        src/ffmpeg/feed/AudioDecoder.cpp
-#        src/ffmpeg/feed/AudioDecoder.h
-#        src/ffmpeg/feed/example.cpp
-#        src/ffmpeg/feed/transcode_aac.cpp
+        #        src/ffmpeg/feed/main.cpp
+        #        src/ffmpeg/feed/AudioDecoder.cpp
+        #        src/ffmpeg/feed/AudioDecoder.h
+        #        src/ffmpeg/feed/example.cpp
+        #        src/ffmpeg/feed/transcode_aac.cpp
 
 
-#        src/ffmpeg/feed2/transcode_aac.cpp
-        src/ffmpeg/stream/ffmpeg_decoder.h
-        src/ffmpeg/stream/ffmpeg_decoder.cpp
-        src/ffmpeg/stream/main.cpp
-#        src/ffmpeg/feed2/example.cpp
-#        src/ffmpeg/feed2/decode_filter_audio.cpp
-        )
+        #        src/ffmpeg/feed2/transcode_aac.cpp
+        #        src/ffmpeg/stream/ffmpeg_decoder.h
+        #        src/ffmpeg/stream/ffmpeg_decoder.cpp
+        #        src/ffmpeg/stream/main.cpp
+
+        #        src/ffmpeg/feed2/decode_filter_audio.cpp
+        src/ffmpeg/feed2/main.cpp
+        src/ffmpeg/feed2/audio_decoder.cpp)
 
 #include_directories(${FFmpegAudioDecoder_SOURCE_DIR})
 
