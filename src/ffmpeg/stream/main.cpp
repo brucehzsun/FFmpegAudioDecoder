@@ -10,7 +10,7 @@ int read_buffer(void *opaque, uint8_t *buf, int buf_size) {
   FILE *fp_open = (FILE *) opaque;
   if (!feof(fp_open)) {
     int true_size = fread(buf, 1, buf_size, fp_open);
-    printf("read_buffer true_size=%d ,buf_size = %d xxxxx\n", true_size, buf_size);
+    printf("read_buffer true_size=%d\n", true_size);
     return true_size;
   } else {
     printf("read_buffer end of file\n");
@@ -24,7 +24,6 @@ int write_buffer(void *outObj, uint8_t *buf, int buf_size) {
   FILE *fp_write = (FILE *) outObj;
   if (!feof(fp_write)) {
     int true_size = fwrite(buf, 1, buf_size, fp_write);
-    printf(">>write_buffer fwrite:%d\n", true_size);
     return true_size;
   } else {
     return -1;
@@ -41,8 +40,20 @@ int main() {
   long startTime = ms.count();
   std::cout << ms.count() << std::endl;
 
-  const char *inputFileName = "data/test.m4a";
-  const char *out_filename = "data/test_out_m4a.wav";
+//    const char *inputFileName = "../data/music.mp3";
+//    const char *out_filename = "../data/music-out.pcm";
+//  const char *inputFileName = "data/test.amr";
+//  const char *out_filename = "data/test_out_amr.pcm";
+
+//  const char *inputFileName = "data/test.ogg";
+//  const char *out_filename = "data/test_out_opus.pcm";
+
+  const char *inputFileName = "data/test.mp3";
+  const char *out_filename = "data/test_out_mp3.pcm";
+
+//  const char *inputFileName = "data/test.m4a";
+//  const char *out_filename = "data/test_out_m4a.pcm";
+
   FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
   FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
 

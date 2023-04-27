@@ -264,11 +264,12 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
         if (resampled_data_size < 0) {
           printf("C++ av_samples_get_buffer_size error:%d\n", resampled_data_size);
           //                return resampled_data_size;
+          continue;
         } else {
           printf("C++ write_buffer resampled_data_size:%d\n", resampled_data_size);
-//          (*write_buffer)(opaque_out, out_buffer, resampled_data_size);
+          (*write_buffer)(opaque_out, out_buffer, resampled_data_size);
           // 写入文件
-          fwrite(out_buffer, 1, resampled_data_size, fp_pcm);
+//          fwrite(out_buffer, 1, resampled_data_size, fp_pcm);
         }
       }
     }
