@@ -12,20 +12,24 @@ namespace Rokid {
 //Read File
 //int (*read_packet)(void *opaque, uint8_t *buf, int buf_size),
 int read_buffer(void *opaque, uint8_t *buf, int buf_size) {
-  printf("read_buffer,************** \n");
   auto *audio_decoder = (Rokid::AudioDecoder *) opaque;
   printf("read_buffer ,queue.size=%d,************** \n", audio_decoder->audio_queue->size());
   if (!audio_decoder->audio_queue->empty()) {
     std::string data = audio_decoder->audio_queue->front();
     audio_decoder->audio_queue->pop();
-    std::memcpy(buf, data.c_str(), data.length());
 
-    printf("read_buffer true_size=%d\n", data.length());
-    return data.length();
+    if (data.length() == 0) {
+      printf("read_buffer end of file\n");
+      return AVERROR_EOF;
+    } else {
+      std::memcpy(buf, data.data(), data.size());
+
+      printf("read_buffer true_size=%d\n", data.length());
+      return data.length();
+    }
   }
 
-  printf("read_buffer end of file\n");
-  return AVERROR_EOF;
+  return -1;
 }
 
 AudioDecoder::AudioDecoder() {
@@ -36,7 +40,7 @@ int AudioDecoder::start(int output_sample_rate) {
   if (output_sample_rate <= 0) {
     this->output_sample_rate = output_sample_rate;
   }
-  if (this->audio_queue != nullptr) {
+  if (this->audio_queue == nullptr) {
     this->audio_queue = std::make_shared<std::queue<std::string> >();
   }
   this->audio_stream_index = -1;
@@ -239,7 +243,7 @@ int AudioDecoder::decode_frame(uint8_t **pcm_buffer) {
   while (1) {
     ret = av_read_frame(format_ctx, packet); // 读取下一帧数据
     if (ret < 0) {
-      fprintf(stderr, "Error submitting the packet to the decoder\n");
+//      fprintf(stderr, "Error submitting the packet to the decoder\n");
       return ret;
     }
     if (packet->stream_index == audio_stream_index) {
@@ -278,17 +282,16 @@ int AudioDecoder::decode_frame(uint8_t **pcm_buffer) {
         int resampled_data_size = av_samples_get_buffer_size(nullptr, out_nb_channels, ret, AV_SAMPLE_FMT_S16, 1);
         if (resampled_data_size < 0) {
           printf("C++ av_samples_get_buffer_size error:%d\n", resampled_data_size);
-          //                return resampled_data_size;
-          continue;
+          return _data_size;
         } else {
-          printf("C++ write_buffer resampled_data_size:%d\n", resampled_data_size);
+//          printf("C++ write_buffer resampled_data_size:%d\n", resampled_data_size);
 //          (*out_buffer).
 //          (*write_buffer)(opaque_out, out_buffer, resampled_data_size);
 //          std::memcpy(pcm_buffer, this->out_buffer, resampled_data_size);
-          memmove(pcm_buffer + _data_size, this->out_buffer, resampled_data_size);
-          _data_size += resampled_data_size;
+//          memmove(pcm_buffer + _data_size, this->out_buffer, resampled_data_size);
+//          _data_size += resampled_data_size;
           // 写入文件
-//          fwrite(out_buffer, 1, resampled_data_size, fp_pcm);
+          fwrite(this->out_buffer, 1, resampled_data_size, fp_pcm);
         }
       }
     }
@@ -298,7 +301,10 @@ int AudioDecoder::decode_frame(uint8_t **pcm_buffer) {
   return _data_size;
 }
 
-int AudioDecoder::stop() {
-
+int AudioDecoder::stop(uint8_t **pcm_buffer) {
+  printf("stop\n");
+  std::string data;
+  audio_queue->push(data);
+  decode_frame(pcm_buffer);
 }
 }

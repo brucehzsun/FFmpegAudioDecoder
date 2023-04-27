@@ -23,7 +23,7 @@ class AudioDecoder {
   AudioDecoder();
   int start(int output_sample_rate = 16000);
   int feed(uint8_t *inbuf, int data_size, uint8_t **out_buffer);
-  int stop();
+  int stop(uint8_t **pcm_buffer);
  private:
   int init_header();
   int init_swr_context();
@@ -43,6 +43,8 @@ class AudioDecoder {
   bool is_init_header;
   int output_sample_rate = 16000;
 
+  const char *out_file = "data/test_output_m4a.pcm";
+  FILE *fp_pcm = fopen(out_file, "wb");
  public:
   std::shared_ptr<std::queue<std::string> > audio_queue = nullptr;
 
