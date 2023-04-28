@@ -20,13 +20,13 @@ int main() {
 //  const char *inputFileName = "data/test.amr";
 //  const char *out_filename = "data/test_out_amr.pcm";
 
-//  const char *inputFileName = "data/test.ogg";
+  const char *inputFileName = "data/test.ogg";
 //  const char *out_filename = "data/test_out_opus.pcm";
 
 //  const char *inputFileName = "data/test.mp3";
 //  const char *out_filename = "data/test_out_mp3.pcm";
 
-  const char *inputFileName = "data/test.amr";
+//  const char *inputFileName = "data/test.amr";
 //  const char *out_filename = "data/test_out_mp3.pcm";
 
 //  const char *inputFileName = "data/test.m4a";
@@ -35,6 +35,7 @@ int main() {
   FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
 //  FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
 
+  std::shared_ptr<std::thread> decode_thread_ = nullptr;
   Rokid::AudioDecoder *decoder = new Rokid::AudioDecoder();
   decoder->start();
   int buf_size = 1024 * 8;

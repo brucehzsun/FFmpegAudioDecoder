@@ -11,11 +11,8 @@ namespace Rokid {
 
 #define IO_BUF_SIZE 81920
 
-//Read File
-//int (*read_packet)(void *opaque, uint8_t *buf, int buf_size),
 int read_buffer(void *opaque, uint8_t *buf, int buf_size) {
   auto *audio_decoder = (Rokid::AudioDecoder *) opaque;
-//  printf("read_buffer ,queue.size=%d,************** \n", audio_decoder->audio_queue->size());
   if (audio_decoder->eof) return AVERROR_EOF;
 
   std::vector<unsigned char> received_data;
@@ -26,10 +23,8 @@ int read_buffer(void *opaque, uint8_t *buf, int buf_size) {
         audio_decoder->eof = true;
         return AVERROR_EOF;
       }
-      for (const auto &byte : received_data) {
-        std::copy(received_data.begin(), received_data.end(), buf);
-      }
-      std::cout << "received data: " << received_data.size() << ",buf_size=" << buf_size << std::endl;
+      std::copy(received_data.begin(), received_data.end(), buf);
+      std::cout << "read_buffer: " << received_data.size() << ",buf_size=" << buf_size << ">>>>>>" << std::endl;
       return (int) received_data.size();
     } else {
       std::cout << "timeout" << std::endl;
@@ -40,9 +35,10 @@ int read_buffer(void *opaque, uint8_t *buf, int buf_size) {
 }
 
 void AudioDecoder::DecodeThreadFunc() {
-  std::cout << "DecodeThreadFunc" << std::endl;
+  std::cout << "audio_decoder_start" << std::endl;
   this->init_header();
   this->decode_frame();
+  std::cout << "audio_decoder_finish" << std::endl;
 }
 
 AudioDecoder::AudioDecoder(int output_sample_rate) {
@@ -74,11 +70,13 @@ int AudioDecoder::stop(uint8_t **pcm_buffer) {
   printf("stop\n");
   std::vector<unsigned char> eof_list;
   this->input_queue->push(eof_list);
+  decode_thread_->join();
   return 0;
 }
 
 int AudioDecoder::init_header() {
 
+  std::cout << "init_header" << std::endl;
   int ret;
 
 // 定义封装结构体,分配一个avformat
@@ -192,6 +190,7 @@ int AudioDecoder::init_header() {
     return -10;
   }
   this->is_init_header = true;
+  std::cout << "init_header success" << std::endl;
   return 0;
 }
 

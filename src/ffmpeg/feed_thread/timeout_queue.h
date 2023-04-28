@@ -34,6 +34,10 @@ class TimeoutQueue {
     return true;
   }
 
+  int size(){
+    return queue_.size();
+  }
+
  private:
   std::queue<T> queue_;
   std::condition_variable cond_;

@@ -46,7 +46,7 @@ class AudioDecoder {
   std::shared_ptr<std::thread> decode_thread_ = nullptr;
 
   void DecodeThreadFunc();
-  const char *out_file = "data/test_output_amr.pcm";
+  const char *out_file = "data/test_output_ogg.pcm";
 
   FILE *fp_pcm = fopen(out_file, "wb");
  public:
