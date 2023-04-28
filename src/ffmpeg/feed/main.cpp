@@ -13,8 +13,18 @@ int main() {
   long startTime = ms.count();
   std::cout << ms.count() << std::endl;
 
-  const char *inputFileName = "data/test.m4a";
-  const char *out_filename = "data/test_feed_m4a_111.pcm";
+//  const char *inputFileName = "data/test.mp3";
+//  const char *out_filename = "data/test_feed_mp3.pcm";
+
+//  const char *inputFileName = "data/test.m4a";
+//  const char *out_filename = "data/test_feed_m4a.pcm";
+
+//  const char *inputFileName = "data/test.ogg";
+//  const char *out_filename = "data/test_feed_ogg.pcm";
+
+  const char *inputFileName = "data/test.amr";
+  const char *out_filename = "data/test_feed_amr.pcm";
+
   FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
   FILE *fp_out = fopen(out_filename, "wb");
 

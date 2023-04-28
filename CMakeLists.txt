@@ -62,8 +62,12 @@ set(SRCS
         #        src/ffmpeg/stream/main.cpp
 
         #        src/ffmpeg/feed2/decode_filter_audio.cpp
-        src/ffmpeg/feed2/main.cpp
-        src/ffmpeg/feed2/audio_decoder.cpp)
+        #        src/ffmpeg/feed2/main.cpp
+        #        src/ffmpeg/feed2/audio_decoder.cpp
+
+        src/ffmpeg/feed_thread/audio_decoder.cpp
+        src/ffmpeg/feed_thread/main.cpp
+        )
 
 #include_directories(${FFmpegAudioDecoder_SOURCE_DIR})
 

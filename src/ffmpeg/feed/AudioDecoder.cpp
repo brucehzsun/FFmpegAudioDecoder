@@ -41,8 +41,8 @@ AudioDecoder::AudioDecoder(int output_sample_rate) {
   /* find the MPEG audio decoder */
 //  const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_MP3);
 //  const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_OPUS);
-//  const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_AMR_NB);
-  const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_AAC);
+  const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_AMR_NB);
+//  const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_AAC);
   if (!codec) {
     fprintf(stderr, "Codec not found\n");
     return;
