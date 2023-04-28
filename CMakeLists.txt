@@ -67,7 +67,7 @@ set(SRCS
 
         src/ffmpeg/feed_thread/audio_decoder.cpp
         src/ffmpeg/feed_thread/main.cpp
-        )
+        src/ffmpeg/feed_thread/timeout_queue.h)
 
 #include_directories(${FFmpegAudioDecoder_SOURCE_DIR})
 

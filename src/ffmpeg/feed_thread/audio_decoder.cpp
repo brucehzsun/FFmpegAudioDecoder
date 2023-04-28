@@ -3,6 +3,8 @@
 #include "audio_decoder.h"
 #include "memory"
 #include "string"
+#include "thread"
+#include "iostream"
 //
 
 namespace Rokid {
@@ -14,36 +16,64 @@ namespace Rokid {
 int read_buffer(void *opaque, uint8_t *buf, int buf_size) {
   auto *audio_decoder = (Rokid::AudioDecoder *) opaque;
 //  printf("read_buffer ,queue.size=%d,************** \n", audio_decoder->audio_queue->size());
-  if (!audio_decoder->audio_queue->empty()) {
-    std::string data = audio_decoder->audio_queue->front();
-    audio_decoder->audio_queue->pop();
+  if (audio_decoder->eof) return AVERROR_EOF;
 
-    if (data.length() == 0) {
-      printf("read_buffer end of file\n");
-      return AVERROR_EOF;
+  std::vector<unsigned char> received_data;
+  while (true) {
+    if (audio_decoder->eof) return AVERROR_EOF;
+    if (audio_decoder->input_queue->pop(received_data)) {
+      if (received_data.empty()) {
+        audio_decoder->eof = true;
+        return AVERROR_EOF;
+      }
+      for (const auto &byte : received_data) {
+        std::copy(received_data.begin(), received_data.end(), buf);
+      }
+      std::cout << "received data: " << received_data.size() << ",buf_size=" << buf_size << std::endl;
+      return (int) received_data.size();
     } else {
-      std::memcpy(buf, data.data(), data.size());
-
-      printf("read_buffer true_size=%d\n", data.length());
-      return data.length();
+      std::cout << "timeout" << std::endl;
+      audio_decoder->eof = true;
+      return AVERROR_EOF;
     }
   }
-
-  return AVERROR_EOF;
 }
 
-AudioDecoder::AudioDecoder() {
-
+void AudioDecoder::DecodeThreadFunc() {
+  std::cout << "DecodeThreadFunc" << std::endl;
+  this->init_header();
+  this->decode_frame();
 }
 
-int AudioDecoder::start(int output_sample_rate) {
+AudioDecoder::AudioDecoder(int output_sample_rate) {
   if (output_sample_rate <= 0) {
     this->output_sample_rate = output_sample_rate;
   }
-  if (this->audio_queue == nullptr) {
-    this->audio_queue = std::make_shared<std::queue<std::string> >();
-  }
+  this->input_queue = std::make_shared<Rokid::TimeoutQueue<std::vector<unsigned char>>>(5000);
+  this->output_queue = std::make_shared<std::queue<std::vector<unsigned char>>>();
   this->audio_stream_index = -1;
+}
+
+int AudioDecoder::start() {
+  std::cout << "start" << std::endl;
+  decode_thread_ = std::make_shared<std::thread>(&AudioDecoder::DecodeThreadFunc, this);
+  return 0;
+}
+
+int AudioDecoder::feed(uint8_t *inbuf, int data_size, uint8_t **pcm_buffer) {
+  printf("feed,%d\n", data_size);
+  std::vector<unsigned char> data_list;
+  for (int i = 0; i < data_size; i++) {
+    data_list.push_back(inbuf[i]);
+  }
+  this->input_queue->push(data_list);
+  return 0;
+}
+
+int AudioDecoder::stop(uint8_t **pcm_buffer) {
+  printf("stop\n");
+  std::vector<unsigned char> eof_list;
+  this->input_queue->push(eof_list);
   return 0;
 }
 
@@ -218,23 +248,7 @@ int AudioDecoder::init_swr_context() {
   return 0;
 }
 
-int AudioDecoder::feed(uint8_t *inbuf, int data_size, uint8_t **out_buffer) {
-  printf("feed,%d\n", data_size);
-  std::string data((char *) inbuf, data_size);
-  audio_queue->push(data);
-
-  if (!this->is_init_header) {
-    printf("C++ not_init_header not init\n");
-    int ret = init_header();
-    printf("C++ init_header,ret=%d\n", ret);
-    if (ret != 0) {
-      return ret;
-    }
-  }
-  return decode_frame(out_buffer);
-}
-
-int AudioDecoder::decode_frame(uint8_t **pcm_buffer) {
+int AudioDecoder::decode_frame() {
   /************ Audio Convert ************/
   // 循环读取一份音频压缩数据
   int _data_size = 0;
@@ -243,7 +257,7 @@ int AudioDecoder::decode_frame(uint8_t **pcm_buffer) {
   while (1) {
     ret = av_read_frame(format_ctx, packet); // 读取下一帧数据
     if (ret < 0) {
-//      fprintf(stderr, "Error submitting the packet to the decoder\n");
+      fprintf(stderr, "Error submitting the packet to the decoder\n");
       return ret;
     }
     if (packet->stream_index == audio_stream_index) {
@@ -252,7 +266,7 @@ int AudioDecoder::decode_frame(uint8_t **pcm_buffer) {
       ret = avcodec_send_packet(av_codec_ctx, packet); // 解码
       if (ret != 0) {
         printf("C++ avcodec_send_packet ret = %d\n", ret);
-//        av_packet_unref(packet);
+        av_packet_unref(packet);
         return ret;
       }
 
@@ -260,11 +274,11 @@ int AudioDecoder::decode_frame(uint8_t **pcm_buffer) {
         //2、解码一帧音频压缩数据包->得到->一帧音频采样数据->音频采样数据帧
         // 接收获取解码收的数据
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-//          av_packet_unref(packet);
+          av_packet_unref(packet);
           break;
         } else if (ret < 0) {
           fprintf(stderr, "Error during decoding: %d\n", ret);
-//          av_packet_unref(packet);
+          av_packet_unref(packet);
           break;
         }
 
@@ -301,11 +315,4 @@ int AudioDecoder::decode_frame(uint8_t **pcm_buffer) {
   return _data_size;
 }
 
-int AudioDecoder::stop(uint8_t **pcm_buffer) {
-  printf("stop\n");
-  std::string data;
-  audio_queue->push(data);
-  decode_frame(pcm_buffer);
-  return 0;
-}
 }

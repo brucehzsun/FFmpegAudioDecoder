@@ -7,6 +7,7 @@
 #include "queue"
 #include "string"
 #include "memory"
+#include "timeout_queue.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -20,14 +21,14 @@ typedef int (*format_buffer_read)(void *opaque_in, uint8_t *buf, int buf_size);
 namespace Rokid {
 class AudioDecoder {
  public:
-  AudioDecoder();
-  int start(int output_sample_rate = 16000);
+  AudioDecoder(int output_sample_rate = 16000);
+  int start();
   int feed(uint8_t *inbuf, int data_size, uint8_t **out_buffer);
-  int stop(uint8_t **pcm_buffer);
+  int stop(uint8_t **out_buffer);
  private:
   int init_header();
   int init_swr_context();
-  int decode_frame(uint8_t **out_buffer);
+  int decode_frame();
 
  private:
   AVFormatContext *format_ctx = nullptr;
@@ -42,11 +43,16 @@ class AudioDecoder {
  private:
   bool is_init_header;
   int output_sample_rate = 16000;
+  std::shared_ptr<std::thread> decode_thread_ = nullptr;
 
+  void DecodeThreadFunc();
   const char *out_file = "data/test_output_amr.pcm";
+
   FILE *fp_pcm = fopen(out_file, "wb");
  public:
-  std::shared_ptr<std::queue<std::string> > audio_queue = nullptr;
+  bool eof = false;
+  std::shared_ptr<Rokid::TimeoutQueue<std::vector<unsigned char>>> input_queue = nullptr;
+  std::shared_ptr<std::queue<std::vector<unsigned char>>> output_queue = nullptr;
 
 };
 }
