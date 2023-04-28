@@ -7,13 +7,13 @@
 
 namespace Rokid {
 
-#define IO_BUF_SIZE 8192
+#define IO_BUF_SIZE 81920
 
 //Read File
 //int (*read_packet)(void *opaque, uint8_t *buf, int buf_size),
 int read_buffer(void *opaque, uint8_t *buf, int buf_size) {
   auto *audio_decoder = (Rokid::AudioDecoder *) opaque;
-  printf("read_buffer ,queue.size=%d,************** \n", audio_decoder->audio_queue->size());
+//  printf("read_buffer ,queue.size=%d,************** \n", audio_decoder->audio_queue->size());
   if (!audio_decoder->audio_queue->empty()) {
     std::string data = audio_decoder->audio_queue->front();
     audio_decoder->audio_queue->pop();
@@ -29,7 +29,7 @@ int read_buffer(void *opaque, uint8_t *buf, int buf_size) {
     }
   }
 
-  return -1;
+  return AVERROR_EOF;
 }
 
 AudioDecoder::AudioDecoder() {
@@ -252,7 +252,7 @@ int AudioDecoder::decode_frame(uint8_t **pcm_buffer) {
       ret = avcodec_send_packet(av_codec_ctx, packet); // 解码
       if (ret != 0) {
         printf("C++ avcodec_send_packet ret = %d\n", ret);
-        av_packet_unref(packet);
+//        av_packet_unref(packet);
         return ret;
       }
 
@@ -260,17 +260,17 @@ int AudioDecoder::decode_frame(uint8_t **pcm_buffer) {
         //2、解码一帧音频压缩数据包->得到->一帧音频采样数据->音频采样数据帧
         // 接收获取解码收的数据
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-          av_packet_unref(packet);
+//          av_packet_unref(packet);
           break;
         } else if (ret < 0) {
           fprintf(stderr, "Error during decoding: %d\n", ret);
-          av_packet_unref(packet);
+//          av_packet_unref(packet);
           break;
         }
 
         //3、类型转换(音频采样数据格式有很多种类型),将每一帧数据转换成pcm
         const auto **frame_data = (const uint8_t **) frame->data;
-        ret = swr_convert(swr_context, &this->out_buffer, IO_BUF_SIZE, frame_data, frame->nb_samples);
+        ret = swr_convert(swr_context, &this->out_buffer, IO_BUF_SIZE * 8, frame_data, frame->nb_samples);
         if (ret < 0) {
           printf("C++ swr_convert error \n");
           return ret;
@@ -306,5 +306,6 @@ int AudioDecoder::stop(uint8_t **pcm_buffer) {
   std::string data;
   audio_queue->push(data);
   decode_frame(pcm_buffer);
+  return 0;
 }
 }
