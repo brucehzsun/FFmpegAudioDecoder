@@ -59,7 +59,7 @@ int main() {
     int ret = decoder->feed((uint8_t *) buf, true_size);
   }
   int ret = decoder->stop();
-  std::cout << "stop,ret=" << ret << std::endl;
+//  std::cout << "stop,ret=" << ret << std::endl;
 
   std::chrono::milliseconds endms = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::now().time_since_epoch()

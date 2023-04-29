@@ -24,7 +24,7 @@ class AudioDecoder {
  public:
   AudioDecoder(int output_sample_rate = 16000);
   int start(format_buffer_write write_buffer, void *opaque_out);
-  int feed(uint8_t *inbuf, int data_size);
+  int feed(uint8_t *inbuf, int data_size) const;
   int stop();
  private:
   int init_header();
@@ -42,7 +42,6 @@ class AudioDecoder {
   int out_nb_channels;
 
  private:
-  bool is_init_header;
   int output_sample_rate = 16000;
   std::shared_ptr<std::thread> decode_thread_ = nullptr;
   format_buffer_write write_buffer = nullptr;
@@ -51,9 +50,7 @@ class AudioDecoder {
   void DecodeThreadFunc();
  public:
   bool eof = false;
-  std::shared_ptr<Rokid::TimeoutQueue<std::vector<unsigned char>>> input_queue = nullptr;
-  std::shared_ptr<Rokid::TimeoutQueue<std::string>> output_queue = nullptr;
-//  std::shared_ptr<std::queue<std::vector<unsigned char>>> output_queue = nullptr;
+  std::shared_ptr<Rokid::TimeoutQueue<std::string>> input_queue = nullptr;
 
 };
 }

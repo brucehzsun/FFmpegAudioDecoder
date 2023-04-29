@@ -15,7 +15,7 @@ int read_buffer(void *opaque, uint8_t *buf, int buf_size) {
   auto *audio_decoder = (Rokid::AudioDecoder *) opaque;
   if (audio_decoder->eof) return AVERROR_EOF;
 
-  std::vector<unsigned char> received_data;
+  std::string received_data;
   while (true) {
     if (audio_decoder->eof) return AVERROR_EOF;
     if (audio_decoder->input_queue->pop(received_data)) {
@@ -23,8 +23,8 @@ int read_buffer(void *opaque, uint8_t *buf, int buf_size) {
         audio_decoder->eof = true;
         return AVERROR_EOF;
       }
-      std::copy(received_data.begin(), received_data.end(), buf);
-      std::cout << "read_buffer: " << received_data.size() << ",buf_size=" << buf_size << ">>>>>>" << std::endl;
+      std::memcpy(buf, received_data.c_str(), received_data.size());
+//      std::cout << "read_buffer: " << received_data.size() << ",buf_size=" << buf_size << ">>>>>>" << std::endl;
       return (int) received_data.size();
     } else {
       std::cout << "timeout" << std::endl;
@@ -45,9 +45,7 @@ AudioDecoder::AudioDecoder(int output_sample_rate) {
   if (output_sample_rate <= 0) {
     this->output_sample_rate = output_sample_rate;
   }
-  this->input_queue = std::make_shared<Rokid::TimeoutQueue<std::vector<unsigned char>>>(5000);
-  this->output_queue = std::make_shared<Rokid::TimeoutQueue<std::string>>(5000);
-//  this->output_queue = std::make_shared<std::queue<std::vector<unsigned char>>>();
+  this->input_queue = std::make_shared<Rokid::TimeoutQueue<std::string>>(5000);
   this->audio_stream_index = -1;
 }
 
@@ -59,20 +57,17 @@ int AudioDecoder::start(format_buffer_write write_buffer, void *opaque_out) {
   return 0;
 }
 
-int AudioDecoder::feed(uint8_t *inbuf, int data_size) {
+int AudioDecoder::feed(uint8_t *inbuf, int data_size) const {
   printf("feed,%d\n", data_size);
-  std::vector<unsigned char> data_list;
-  for (int i = 0; i < data_size; i++) {
-    data_list.push_back(inbuf[i]);
-  }
-  this->input_queue->push(data_list);
+  std::string raw_data((char *) inbuf, data_size);
+  this->input_queue->push(raw_data);
   return 0;
 }
 
 int AudioDecoder::stop() {
   printf("stop\n");
-  std::vector<unsigned char> eof_list;
-  this->input_queue->push(eof_list);
+  std::string eof_str;
+  this->input_queue->push(eof_str);
   decode_thread_->join();
   return 0;
 }
@@ -126,7 +121,7 @@ int AudioDecoder::init_header() {
   for (unsigned int i = 0; i < format_ctx->nb_streams; ++i) {
     const AVStream *stream = format_ctx->streams[i];
     if (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-      audio_stream_index = i;
+      audio_stream_index = static_cast<int>(i);
       break;
     }
   }
@@ -192,7 +187,6 @@ int AudioDecoder::init_header() {
     printf("C++ av_malloc(IO_BUF_SIZE) failed\n");
     return -10;
   }
-  this->is_init_header = true;
   std::cout << "init_header success" << std::endl;
   return 0;
 }
@@ -259,7 +253,6 @@ int AudioDecoder::decode_frame() {
   while (1) {
     ret = av_read_frame(format_ctx, packet); // 读取下一帧数据
     if (ret < 0) {
-      fprintf(stderr, "Error submitting the packet to the decoder\n");
       return ret;
     }
     if (packet->stream_index == audio_stream_index) {
@@ -286,43 +279,24 @@ int AudioDecoder::decode_frame() {
 
         //3、类型转换(音频采样数据格式有很多种类型),将每一帧数据转换成pcm
         const auto **frame_data = (const uint8_t **) frame->data;
-        ret = swr_convert(swr_context, &this->out_buffer, IO_BUF_SIZE * 8, frame_data, frame->nb_samples);
+        ret = swr_convert(swr_context, &this->out_buffer, IO_BUF_SIZE, frame_data, frame->nb_samples);
         if (ret < 0) {
           printf("C++ swr_convert error \n");
           return ret;
         }
 
-        //5、写入文件(你知道要写多少吗？)
-        // 获取实际的缓存大小（补充：第三个参数不应该是输入的样本数，而是重采样的样本数）
-        //ret = frame->nb_samples * outSampleRate / inSampleRate,
+        //5、写入文件, 获取实际的缓存大小（补充：第三个参数不应该是输入的样本数，而是重采样的样本数）
         int resampled_data_size = av_samples_get_buffer_size(nullptr, out_nb_channels, ret, AV_SAMPLE_FMT_S16, 1);
         if (resampled_data_size < 0) {
           printf("C++ av_samples_get_buffer_size error:%d\n", resampled_data_size);
           return _data_size;
         } else {
-//          printf("C++ write_buffer resampled_data_size:%d\n", resampled_data_size);
-//          (*out_buffer).
           (*write_buffer)(opaque_out, this->out_buffer, resampled_data_size);
-//          std::memcpy(pcm_buffer, this->out_buffer, resampled_data_size);
-//          memmove(pcm_buffer + _data_size, this->out_buffer, resampled_data_size);
-//          _data_size += resampled_data_size;
-          // 写入文件
-
-//          std::vector<uint8_t> data_list(resampled_data_size);
-//          for (int i = 0; i < resampled_data_size; i++) {
-//            data_list.push_back(this->out_buffer[i]);
-//          }
-//          std::string pcm_data((char *) this->out_buffer, resampled_data_size);
-//          this->output_queue->push(pcm_data);
-//          printf("writer:%d\n", resampled_data_size);
-//          fwrite(this->out_buffer, 1, resampled_data_size, fp_pcm2);
         }
       }
     }
-//    av_packet_unref(packet);
+    av_packet_unref(packet);
   }
-
-  return _data_size;
 }
 
 }
