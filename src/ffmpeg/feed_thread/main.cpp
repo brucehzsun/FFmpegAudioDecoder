@@ -5,6 +5,18 @@
 
 using namespace std;
 
+//Write File
+int write_buffer(void *outObj, uint8_t *buf, int buf_size) {
+//    printf("write_buffer\n");
+  FILE *fp_write = (FILE *) outObj;
+  if (!feof(fp_write)) {
+    int true_size = fwrite(buf, 1, buf_size, fp_write);
+    return true_size;
+  } else {
+    return -1;
+  }
+}
+
 int main() {
   std::cout << "Hello, World!" << std::endl;
 
@@ -37,20 +49,16 @@ int main() {
 
   std::shared_ptr<std::thread> decode_thread_ = nullptr;
   Rokid::AudioDecoder *decoder = new Rokid::AudioDecoder();
-  decoder->start();
+  decoder->start(write_buffer, fp_write);
   int buf_size = 1024 * 8;
   char buf[buf_size];
-  uint8_t *out_buf = new uint8_t[buf_size * 8];
 
   while (!feof(fp_open)) {
     int true_size = fread(buf, 1, buf_size, fp_open);
 //    printf("read from file,len=%d\n", true_size);
-    int pcm_size = decoder->feed((uint8_t *) buf, true_size, &out_buf);
-    int writer_size = fwrite(out_buf, 1, pcm_size, fp_write);
-    printf("writer raw_size=%d,pcm_size=%d,writer_size=%d\n", true_size, pcm_size, writer_size);
-//    printf("read_buffer raw_size=%d,pcm_size=%d\n", true_size, pcm_size);
+    int ret = decoder->feed((uint8_t *) buf, true_size);
   }
-  int ret = decoder->stop(&out_buf);
+  int ret = decoder->stop();
   std::cout << "stop,ret=" << ret << std::endl;
 
   std::chrono::milliseconds endms = std::chrono::duration_cast<std::chrono::milliseconds>(

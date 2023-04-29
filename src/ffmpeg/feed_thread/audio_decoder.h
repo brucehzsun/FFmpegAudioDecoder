@@ -17,14 +17,15 @@ extern "C" {
 }
 
 typedef int (*format_buffer_read)(void *opaque_in, uint8_t *buf, int buf_size);
+typedef int (*format_buffer_write)(void *opaque_out, uint8_t *buf, int buf_size);
 
 namespace Rokid {
 class AudioDecoder {
  public:
   AudioDecoder(int output_sample_rate = 16000);
-  int start();
-  int feed(uint8_t *inbuf, int data_size, uint8_t **out_buffer);
-  int stop(uint8_t **out_buffer);
+  int start(format_buffer_write write_buffer, void *opaque_out);
+  int feed(uint8_t *inbuf, int data_size);
+  int stop();
  private:
   int init_header();
   int init_swr_context();
@@ -44,6 +45,8 @@ class AudioDecoder {
   bool is_init_header;
   int output_sample_rate = 16000;
   std::shared_ptr<std::thread> decode_thread_ = nullptr;
+  format_buffer_write write_buffer = nullptr;
+  void *opaque_out = nullptr;
 
   void DecodeThreadFunc();
  public:
