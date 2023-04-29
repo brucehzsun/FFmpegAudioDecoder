@@ -289,7 +289,8 @@ int AudioDecoder::decode_frame() {
         int resampled_data_size = av_samples_get_buffer_size(nullptr, out_nb_channels, ret, AV_SAMPLE_FMT_S16, 1);
         if (resampled_data_size < 0) {
           printf("C++ av_samples_get_buffer_size error:%d\n", resampled_data_size);
-          return _data_size;
+//          return _data_size;
+          break;
         } else {
           (*write_buffer)(opaque_out, this->out_buffer, resampled_data_size);
         }

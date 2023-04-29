@@ -32,14 +32,14 @@ int main() {
 //  const char *inputFileName = "data/test.amr";
 //  const char *out_filename = "data/test_out_amr.pcm";
 
-  const char *inputFileName = "data/test.ogg";
-  const char *out_filename = "data/test_out_opus.pcm";
+//  const char *inputFileName = "data/test.ogg";
+//  const char *out_filename = "data/test_out_opus.pcm";
 
-//  const char *inputFileName = "data/test.mp3";
-//  const char *out_filename = "data/test_out_mp3.pcm";
+  const char *inputFileName = "data/test.mp3";
+  const char *out_filename = "data/test_out_mp3.pcm";
 
 //  const char *inputFileName = "data/test.amr";
-//  const char *out_filename = "data/test_out_mp3.pcm";
+//  const char *out_filename = "data/test_out_amr.pcm";
 
 //  const char *inputFileName = "data/test.m4a";
 //  const char *out_filename = "data/test_out_m4a.pcm";

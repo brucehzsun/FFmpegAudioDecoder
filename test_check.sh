@@ -1,4 +1,3 @@
 #!/bin/bash
 
-cd bin
-valgrind --leak-check=full ./FFmpegAudioDecoder
+valgrind --tool=memcheck --leak-check=full ./bin/FFmpegAudioDecoder > log.txt 2>&1

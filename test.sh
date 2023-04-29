@@ -1,4 +1,3 @@
 #!/bin/bash
 
-cd bin
-./FFmpegAudioDecoder
+./bin/FFmpegAudioDecoder
