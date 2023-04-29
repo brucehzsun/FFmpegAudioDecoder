@@ -47,12 +47,15 @@ class AudioDecoder {
 
   void DecodeThreadFunc();
   const char *out_file = "data/test_output_ogg.pcm";
-
   FILE *fp_pcm = fopen(out_file, "wb");
+
+  const char *out_file2 = "data/test_output_ogg2.pcm";
+  FILE *fp_pcm2 = fopen(out_file2, "wb");
  public:
   bool eof = false;
   std::shared_ptr<Rokid::TimeoutQueue<std::vector<unsigned char>>> input_queue = nullptr;
-  std::shared_ptr<std::queue<std::vector<unsigned char>>> output_queue = nullptr;
+  std::shared_ptr<Rokid::TimeoutQueue<std::vector<uint8_t>>> output_queue = nullptr;
+//  std::shared_ptr<std::queue<std::vector<unsigned char>>> output_queue = nullptr;
 
 };
 }

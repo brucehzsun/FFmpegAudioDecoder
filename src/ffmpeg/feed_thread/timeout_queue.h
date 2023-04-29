@@ -17,6 +17,10 @@ class TimeoutQueue {
  public:
   TimeoutQueue(int timeout_ms) : timeout_(timeout_ms) {}
 
+  bool empty() {
+    return queue_.empty();
+  }
+
   void push(const T &item) {
     std::unique_lock<std::mutex> lock(mutex_);
     queue_.push(item);
@@ -34,7 +38,7 @@ class TimeoutQueue {
     return true;
   }
 
-  int size(){
+  int size() {
     return queue_.size();
   }
 

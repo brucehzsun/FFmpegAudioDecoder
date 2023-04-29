@@ -21,7 +21,7 @@ int main() {
 //  const char *out_filename = "data/test_out_amr.pcm";
 
   const char *inputFileName = "data/test.ogg";
-//  const char *out_filename = "data/test_out_opus.pcm";
+  const char *out_filename = "data/test_out_opus.pcm";
 
 //  const char *inputFileName = "data/test.mp3";
 //  const char *out_filename = "data/test_out_mp3.pcm";
@@ -33,7 +33,7 @@ int main() {
 //  const char *out_filename = "data/test_out_m4a.pcm";
 
   FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
-//  FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
+  FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
 
   std::shared_ptr<std::thread> decode_thread_ = nullptr;
   Rokid::AudioDecoder *decoder = new Rokid::AudioDecoder();
@@ -47,7 +47,7 @@ int main() {
 //    printf("read from file,len=%d\n", true_size);
     int pcm_size = decoder->feed((uint8_t *) buf, true_size, &out_buf);
 //    int writer_size = fwrite(out_buf, 1, pcm_size, fp_write);
-//    printf("read_buffer raw_size=%d,pcm_size=%d,writer_size=%d\n", true_size, pcm_size, writer_size);
+//    printf("writer raw_size=%d,pcm_size=%d,writer_size=%d\n", true_size, pcm_size, writer_size);
 //    printf("read_buffer raw_size=%d,pcm_size=%d\n", true_size, pcm_size);
   }
   int ret = decoder->stop(&out_buf);
