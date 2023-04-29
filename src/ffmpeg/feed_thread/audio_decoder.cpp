@@ -46,7 +46,7 @@ AudioDecoder::AudioDecoder(int output_sample_rate) {
     this->output_sample_rate = output_sample_rate;
   }
   this->input_queue = std::make_shared<Rokid::TimeoutQueue<std::vector<unsigned char>>>(5000);
-  this->output_queue = std::make_shared<Rokid::TimeoutQueue<std::vector<unsigned char>>>(5000);
+  this->output_queue = std::make_shared<Rokid::TimeoutQueue<std::string>>(5000);
 //  this->output_queue = std::make_shared<std::queue<std::vector<unsigned char>>>();
   this->audio_stream_index = -1;
 }
@@ -68,17 +68,13 @@ int AudioDecoder::feed(uint8_t *inbuf, int data_size, uint8_t **pcm_buffer) {
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
   int data_offset = 0;
-  std::vector<uint8_t> received_data;
+  std::string received_data;
   while (!this->output_queue->empty()) {
     this->output_queue->pop(received_data);
 
     int raw_data_size = received_data.size();
-    uint8_t pcm_buf[raw_data_size];
-    std::copy(received_data.begin(), received_data.end(), pcm_buf);
-    fwrite(pcm_buf, 1, raw_data_size, fp_pcm);
-
-//    memmove(*pcm_buffer + data_offset, pcm_buf, raw_data_size);
-//    data_offset += raw_data_size;
+    memmove(*pcm_buffer + data_offset, received_data.c_str(), raw_data_size);
+    data_offset += raw_data_size;
 //    printf("writer:%d\n", received_data.size());
   }
   return data_offset;
@@ -323,13 +319,14 @@ int AudioDecoder::decode_frame() {
 //          _data_size += resampled_data_size;
           // 写入文件
 
-          std::vector<uint8_t> data_list(resampled_data_size);
-          for (int i = 0; i < resampled_data_size; i++) {
-            data_list.push_back(this->out_buffer[i]);
-          }
-          this->output_queue->push(data_list);
+//          std::vector<uint8_t> data_list(resampled_data_size);
+//          for (int i = 0; i < resampled_data_size; i++) {
+//            data_list.push_back(this->out_buffer[i]);
+//          }
+          std::string pcm_data((char *) this->out_buffer, resampled_data_size);
+          this->output_queue->push(pcm_data);
 //          printf("writer:%d\n", resampled_data_size);
-          fwrite(this->out_buffer, 1, resampled_data_size, fp_pcm2);
+//          fwrite(this->out_buffer, 1, resampled_data_size, fp_pcm2);
         }
       }
     }
