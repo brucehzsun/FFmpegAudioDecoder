@@ -53,23 +53,19 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
   }
 
   // 定义封装结构体,分配一个avformat
-  AVFormatContext *format_ctx = avformat_alloc_context();
+  this->format_ctx = avformat_alloc_context();
   if (format_ctx == nullptr) {
     printf("C++ avFormatContext alloc fail\n");
     return -3;
   }
 
-  const char *input_file = "data/test.m4a";
-  const char *out_file = "data/test_output_m4a.pcm";
-  FILE *fp_pcm = fopen(out_file, "wb");
-
-  unsigned char *inbuffer = (unsigned char *) av_malloc(IO_BUF_SIZE);
-  if (inbuffer == nullptr) {
+  this->inbuffer = (unsigned char *) av_malloc(IO_BUF_SIZE);
+  if (this->inbuffer == nullptr) {
     printf("C++ av malloc failed\n");
     return -1;
   }
 
-  AVIOContext *avio_cxt = avio_alloc_context(inbuffer, IO_BUF_SIZE, 0, opaque_in, read_buffer, nullptr, nullptr);
+  this->avio_cxt = avio_alloc_context(this->inbuffer, IO_BUF_SIZE, 0, opaque_in, read_buffer, nullptr, nullptr);
   if (avio_cxt == nullptr) {
     printf("C++ avio_alloc_context for input failed\n");
     return -2;
@@ -124,7 +120,7 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
     return -1;
   }
 
-  AVCodecContext *av_codec_ctx = avcodec_alloc_context3(av_codec);
+  this->av_codec_ctx = avcodec_alloc_context3(av_codec);
   if (av_codec_ctx == nullptr) {
     printf("C++ avcodec_alloc_context3 failed\n");
     return -6;
@@ -145,7 +141,7 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
   printf("av_codec name: %s\n", av_codec->name);
 
   //用于存放解码后的数据,创建音频采样数据帧
-  AVFrame *frame = av_frame_alloc();
+  this->frame = av_frame_alloc();
   if (frame == nullptr) {
     printf("C++ av_fram_alloc failed\n");
     return -1;
@@ -153,7 +149,7 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
 
   /**第六步：读取音频压缩数据->循环读取*/
   //创建音频压缩数据帧->acc格式、mp3格式
-  AVPacket *packet = (AVPacket *) av_malloc(sizeof(AVPacket));
+  this->packet = (AVPacket *) av_malloc(sizeof(AVPacket));
   if (!packet) {
     fprintf(stderr, "Could not allocate video packet\n");
     return -1;
@@ -164,7 +160,7 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
   // frame->16bit 16000 PCM 统一音频采样格式与采样率
   /** 开始设置转码信息**/
   // 打开转码器
-  SwrContext *swr_context = swr_alloc();
+  this->swr_context = swr_alloc();
   if (swr_context == nullptr) {
     printf("C++ swr_alloc failed\n");
     return -8;
@@ -212,8 +208,8 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
   int out_nb_channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_MONO);
 
   // 设置音频缓冲区间 16bit   16000  PCM数据, 单声道
-  uint8_t *out_buffer = (uint8_t *) av_malloc(IO_BUF_SIZE);
-  if (out_buffer == nullptr) {
+  this->out_buffer = (uint8_t *) av_malloc(IO_BUF_SIZE);
+  if (this->out_buffer == nullptr) {
     printf("C++ av_malloc(IO_BUF_SIZE) failed\n");
     return -10;
   }
@@ -277,13 +273,27 @@ int FFmpegDecoder::start(format_buffer_read read_buffer, void *opaque_in, format
     av_packet_unref(packet);
   }
 
+  printf("C++ decoder finish\n");
+  return 0;
+}
+
+int FFmpegDecoder::stop() {
   /* Release resources */
+//  av_free(this->inbuffer);
   av_frame_free(&frame);
   av_packet_free(&packet);
   swr_free(&swr_context);
   avcodec_free_context(&av_codec_ctx); // unless avcodec_alloc_context3() is used
   avformat_close_input(&format_ctx);
 
-  printf("C++ decoder finish\n");
+//  av_packet_free(&avpacket);
+//  swr_free(&swr_context);
+//  av_frame_free(&avframe);
+//  avcodec_free_context(&avCodecContex);
+//  avformat_close_input(&avFormatContext);
+  avcodec_close(av_codec_ctx);
+  av_free(avio_cxt->buffer);
+  av_free(this->out_buffer);
+  avio_context_free(&avio_cxt);
   return 0;
 }

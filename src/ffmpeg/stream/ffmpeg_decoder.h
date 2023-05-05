@@ -28,7 +28,18 @@ class FFmpegDecoder {
             void *opaque_out,
             int output_sample_rate);
 
+  int stop();
+
  private:
+
+  AVFrame *frame;
+  AVPacket *packet;
+  SwrContext *swr_context;
+  AVCodecContext *av_codec_ctx;
+  AVFormatContext *format_ctx;
+  unsigned char *inbuffer;
+  uint8_t *out_buffer;
+  AVIOContext *avio_cxt;
 
  private:
 

@@ -54,11 +54,16 @@ int main() {
 //  const char *inputFileName = "data/test.m4a";
 //  const char *out_filename = "data/test_out_m4a.pcm";
 
-  FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
-  FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
 
-  FFmpegDecoder *decoder;
-  decoder->start(read_buffer, fp_open, write_buffer, fp_write, 16000);
+  FFmpegDecoder decoder;
+  for (int i = 0; i < 1; i++) {
+    FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
+    FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
+    decoder.start(read_buffer, fp_open, write_buffer, fp_write, 16000);
+    decoder.stop();
+    fclose(fp_open);
+    fclose(fp_write);
+  }
 
   std::chrono::milliseconds endms = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::now().time_since_epoch()

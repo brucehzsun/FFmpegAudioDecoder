@@ -57,17 +57,18 @@ set(SRCS
 
 
         #        src/ffmpeg/feed2/transcode_aac.cpp
-        #        src/ffmpeg/stream/ffmpeg_decoder.h
-        #        src/ffmpeg/stream/ffmpeg_decoder.cpp
-        #        src/ffmpeg/stream/main.cpp
+                src/ffmpeg/stream/ffmpeg_decoder.h
+                src/ffmpeg/stream/ffmpeg_decoder.cpp
+                src/ffmpeg/stream/main.cpp
 
         #        src/ffmpeg/feed2/decode_filter_audio.cpp
         #        src/ffmpeg/feed2/main.cpp
         #        src/ffmpeg/feed2/audio_decoder.cpp
 
-        src/ffmpeg/feed_thread/audio_decoder.cpp
-        src/ffmpeg/feed_thread/main.cpp
-        src/ffmpeg/feed_thread/timeout_queue.h)
+#        src/ffmpeg/feed_thread/audio_decoder.cpp
+#        src/ffmpeg/feed_thread/main.cpp
+#        src/ffmpeg/feed_thread/timeout_queue.h
+        )
 
 #include_directories(${FFmpegAudioDecoder_SOURCE_DIR})
 
