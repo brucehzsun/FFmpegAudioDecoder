@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include "opus_decoder.h"
+#include "vector"
 
 using namespace Rokid;
 using namespace std;
@@ -30,7 +31,7 @@ int RKOpusDecoder::start(format_buffer_write write_buffer, void *opaque_out) {
   if (err != OPUS_OK) {
     return -1;
   }
-  int bitrate = 16000 * 2;
+  int bitrate = 16000;
 
   opus_decoder_ctl(_opus_decoder, OPUS_SET_VBR(1));
   opus_decoder_ctl(_opus_decoder, OPUS_SET_COMPLEXITY(8));
@@ -40,7 +41,7 @@ int RKOpusDecoder::start(format_buffer_write write_buffer, void *opaque_out) {
   int duration = 20;
   _opu_frame_size = bitrate * duration / 8000;
   _pcm_frame_size = this->_output_sample_rate * duration / 1000;
-//  _pcm_buffer = new uint16_t[_pcm_frame_size];
+  _pcm_buffer = new uint16_t[_pcm_frame_size];
 
   return 0;
 }
@@ -63,8 +64,8 @@ int RKOpusDecoder::feed(uint8_t *data, int data_size) const {
 //  std::cout << "opus_len=" << opus_len << ",data_size=" << data_size << std::endl;
 
 //  short decoded_audio[IO_BUF_SIZE];
-  uint16_t *pcm_buffer = new uint16_t[IO_BUF_SIZE];
-  int num_samples = opus_decode(_opus_decoder, data, data_size, reinterpret_cast<opus_int16 *>(pcm_buffer),
+//  uint16_t *pcm_buffer = new uint16_t[IO_BUF_SIZE];
+  int num_samples = opus_decode(_opus_decoder, data, data_size, reinterpret_cast<opus_int16 *>(_pcm_buffer),
                                 _pcm_frame_size, 0);
   if (num_samples < 0) {
     return num_samples;
@@ -72,7 +73,7 @@ int RKOpusDecoder::feed(uint8_t *data, int data_size) const {
   // debug
   // printf("decode debug: %x %x %x %x\n", _pcm_buffer[240], _pcm_buffer[241], _pcm_buffer[242], _pcm_buffer[243]);
 //  return _pcm_buffer;
-  (*write_buffer)(opaque_out, reinterpret_cast<uint8_t *>(pcm_buffer), _pcm_frame_size);
+  (*write_buffer)(opaque_out, reinterpret_cast<uint8_t *>(_pcm_buffer), num_samples * sizeof(uint16_t));
   return 0;
 }
 

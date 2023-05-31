@@ -29,6 +29,7 @@ class RKOpusDecoder : public AudioDecoderInterface {
   uint32_t _pcm_frame_size;
   uint32_t _opu_frame_size;
   int _duration;
+  uint16_t* _pcm_buffer;
 };
 
 } // namesapce rokid
