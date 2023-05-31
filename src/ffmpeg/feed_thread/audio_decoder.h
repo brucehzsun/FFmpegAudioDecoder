@@ -44,8 +44,7 @@ class AudioDecoder {
  private:
   int output_sample_rate = 16000;
   std::shared_ptr<std::thread> decode_thread_ = nullptr;
-  format_buffer_write write_buffer = nullptr;
-  void *opaque_out = nullptr;
+
 
   void DecodeThreadFunc();
  public:
