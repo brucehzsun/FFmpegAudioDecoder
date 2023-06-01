@@ -70,10 +70,10 @@ int test_ffmpeg() {
   return 0;
 }
 
-int test_opus() {
+int test_opus(int index) {
 
-  const char *out_filename = "data/test_out_opu.pcm";
-  FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
+  std::string out_filename = "data/test_out_opu_" + std::to_string(index) + ".pcm";
+  FILE *fp_write = fopen(out_filename.c_str(), "wb+"); //输出文件
 
   Rokid::RKOpusDecoder decoder;
 
@@ -83,7 +83,7 @@ int test_opus() {
     return -1;
   }
 
-  std::ifstream input("data/in.opu", std::ios::binary); // 打开输入文件流
+  std::ifstream input("data/weather.opu", std::ios::binary); // 打开输入文件流
   if (!input.is_open()) {
     cerr << "Failed to open input file" << endl;
     return -1;
@@ -112,5 +112,7 @@ int test_opus() {
 
 int main() {
 //  test_ffmpeg();
-  test_opus();
+  for (int i = 0; i < 1; i++) {
+    test_opus(i);
+  }
 }
