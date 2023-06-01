@@ -41,10 +41,7 @@ void AudioDecoder::DecodeThreadFunc() {
   std::cout << "audio_decoder_finish" << std::endl;
 }
 
-AudioDecoder::AudioDecoder(int output_sample_rate) {
-  if (output_sample_rate <= 0) {
-    this->output_sample_rate = output_sample_rate;
-  }
+AudioDecoder::AudioDecoder(int output_sample_rate) : Rokid::AudioDecoderInterface(output_sample_rate) {
   this->input_queue = std::make_shared<Rokid::TimeoutQueue<std::string>>(5000);
   this->audio_stream_index = -1;
 }
@@ -228,7 +225,7 @@ int AudioDecoder::init_swr_context() {
 
   //设置转码参数
   if ((this->swr_context =
-           swr_alloc_set_opts(this->swr_context, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_S16, output_sample_rate,
+           swr_alloc_set_opts(this->swr_context, AV_CH_LAYOUT_MONO, AV_SAMPLE_FMT_S16, _output_sample_rate,
                               in_ch_layout, av_codec_ctx->sample_fmt, inSampleRate, 0,
                               nullptr)) == nullptr) {
     printf("C++ swr_alloc_set_opts failed\n");

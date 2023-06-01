@@ -62,7 +62,7 @@ int RKOpusDecoder::feed(uint8_t *data, int data_size) const {
   // 指向需要读取的字节的指针
   uint8_t *bytes_to_read = data + 1;
 
-  std::cout << "num_bytes_to_read=" << num_bytes_to_read << ",data_size=" << data_size << std::endl;
+//  std::cout << "num_bytes_to_read=" << num_bytes_to_read << ",data_size=" << data_size << std::endl;
 
   // 分配缓冲区并读取数据
   std::vector<uint8_t> buffer(num_bytes_to_read);

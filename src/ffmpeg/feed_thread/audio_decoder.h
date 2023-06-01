@@ -8,6 +8,7 @@
 #include "string"
 #include "memory"
 #include "timeout_queue.h"
+#include "audio_decoder_interface.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -16,16 +17,17 @@ extern "C" {
 #include<libswresample/swresample.h>
 }
 
-typedef int (*format_buffer_read)(void *opaque_in, uint8_t *buf, int buf_size);
 typedef int (*format_buffer_write)(void *opaque_out, uint8_t *buf, int buf_size);
 
 namespace Rokid {
-class AudioDecoder {
+
+class AudioDecoder : public AudioDecoderInterface {
  public:
   AudioDecoder(int output_sample_rate = 16000);
-  int start(format_buffer_write write_buffer, void *opaque_out);
-  int feed(uint8_t *inbuf, int data_size) const;
-  int stop();
+  int start(format_buffer_write write_buffer, void *opaque_out) override;
+  int feed(uint8_t *inbuf, int data_size) const override;
+  int stop() override;
+
  private:
   int init_header();
   int init_swr_context();
@@ -42,9 +44,7 @@ class AudioDecoder {
   int out_nb_channels;
 
  private:
-  int output_sample_rate = 16000;
   std::shared_ptr<std::thread> decode_thread_ = nullptr;
-
 
   void DecodeThreadFunc();
  public:

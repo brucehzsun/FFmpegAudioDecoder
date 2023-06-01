@@ -1,5 +1,4 @@
 #include "audio_decoder.h"
-
 #include <iostream>
 #include <chrono>
 #include "fstream"
@@ -20,58 +19,58 @@ int write_buffer(void *outObj, uint8_t *buf, int buf_size) {
 }
 
 int test_ffmpeg() {
-//  std::cout << "Hello, World!" << std::endl;
-//
-//  std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-//      std::chrono::system_clock::now().time_since_epoch()
-//  );
-//
-//  long startTime = ms.count();
-//  std::cout << ms.count() << std::endl;
-//
-////    const char *inputFileName = "../data/music.mp3";
-////    const char *out_filename = "../data/music-out.pcm";
-////  const char *inputFileName = "data/test.amr";
-////  const char *out_filename = "data/test_out_amr.pcm";
-//
-////  const char *inputFileName = "data/test.ogg";
-////  const char *out_filename = "data/test_out_opus.pcm";
-//
-//  const char *inputFileName = "data/test.mp3";
-//  const char *out_filename = "data/test_out_mp3.pcm";
-//
-////  const char *inputFileName = "data/test.amr";
-////  const char *out_filename = "data/test_out_amr.pcm";
-//
-////  const char *inputFileName = "data/test.m4a";
-////  const char *out_filename = "data/test_out_m4a.pcm";
-//
-//  FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
-//  FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
-//
-//  std::shared_ptr<std::thread> decode_thread_ = nullptr;
-//  Rokid::AudioDecoder *decoder = new Rokid::AudioDecoder();
-//  decoder->start(write_buffer, fp_write);
-//  int buf_size = 1024 * 8;
-//  char buf[buf_size];
-//
-//  while (!feof(fp_open)) {
-//    int true_size = fread(buf, 1, buf_size, fp_open);
-////    printf("read from file,len=%d\n", true_size);
-//    int ret = decoder->feed((uint8_t *) buf, true_size);
-//  }
-//  int ret = decoder->stop();
-////  std::cout << "stop,ret=" << ret << std::endl;
-//
-//  std::chrono::milliseconds endms = std::chrono::duration_cast<std::chrono::milliseconds>(
-//      std::chrono::system_clock::now().time_since_epoch()
-//  );
-////    delete decoder;
-//  cout << "C++ finish, time = " << (endms.count() - startTime) << endl;
+  std::cout << "Hello, World!" << std::endl;
+
+  std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::system_clock::now().time_since_epoch()
+  );
+
+  long startTime = ms.count();
+  std::cout << ms.count() << std::endl;
+
+//    const char *inputFileName = "../data/music.mp3";
+//    const char *out_filename = "../data/music-out.pcm";
+//  const char *inputFileName = "data/test.amr";
+//  const char *out_filename = "data/test_out_amr.pcm";
+
+//  const char *inputFileName = "data/test.ogg";
+//  const char *out_filename = "data/test_out_opus.pcm";
+
+  const char *inputFileName = "data/test.mp3";
+  const char *out_filename = "data/test_out_mp3.pcm";
+
+//  const char *inputFileName = "data/test.amr";
+//  const char *out_filename = "data/test_out_amr.pcm";
+
+//  const char *inputFileName = "data/test.m4a";
+//  const char *out_filename = "data/test_out_m4a.pcm";
+
+  FILE *fp_open = fopen(inputFileName, "rb");    //视频源文件
+  FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
+
+  std::shared_ptr<std::thread> decode_thread_ = nullptr;
+  auto *decoder = new Rokid::AudioDecoder(16000);
+  decoder->start(write_buffer, fp_write);
+  int buf_size = 1024 * 8;
+  char buf[buf_size];
+
+  while (!feof(fp_open)) {
+    int true_size = fread(buf, 1, buf_size, fp_open);
+//    printf("read from file,len=%d\n", true_size);
+    int ret = decoder->feed((uint8_t *) buf, true_size);
+  }
+  int ret = decoder->stop();
+//  std::cout << "stop,ret=" << ret << std::endl;
+
+  std::chrono::milliseconds endms = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::system_clock::now().time_since_epoch()
+  );
+//    delete decoder;
+  cout << "test ffmpeg finish, time = " << (endms.count() - startTime) << endl;
   return 0;
 }
 
-int main() {
+int test_opus() {
 
   const char *out_filename = "data/test_out_opu.pcm";
   FILE *fp_write = fopen(out_filename, "wb+"); //输出文件
@@ -98,9 +97,8 @@ int main() {
     char *buffer = new char[length];
     input.read(buffer, length); // 读取对应长度的内容到缓冲区
     buffer_vector.insert(buffer_vector.end(), buffer, buffer + length); // 将缓冲区内容追加到 vector 中
-    std::cout << "feed = " << length << std::endl;
     ret = decoder.feed((uint8_t *) buffer_vector.data(), buffer_vector.size()); // 解码缓冲区内容
-    std::cout << "feed = " << length << ",ret=" << ret << std::endl;
+//    std::cout << "feed = " << length << ",ret=" << ret << std::endl;
     delete[] buffer;
   }
 
@@ -108,6 +106,11 @@ int main() {
 
   input.close(); // 关闭输入文件流
   fclose(fp_write);
-
+  std::cout << "test opus finish" << std::endl;
   return 0;
+}
+
+int main() {
+//  test_ffmpeg();
+  test_opus();
 }

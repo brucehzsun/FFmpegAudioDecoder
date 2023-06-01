@@ -66,12 +66,11 @@ set(SRCS
         #        src/ffmpeg/feed2/main.cpp
         #        src/ffmpeg/feed2/audio_decoder.cpp
 
-        #        src/ffmpeg/feed_thread/audio_decoder.cpp
+        src/ffmpeg/feed_thread/audio_decoder.cpp
         src/ffmpeg/feed_thread/main.cpp
         src/ffmpeg/feed_thread/opus_decoder.cc
-        #        src/ffmpeg/feed_thread/timeout_queue.h
-#        src/ffmpeg/feed_thread/audio_decoder_interface.h
-#        src/ffmpeg/feed_thread/opus_decoder.cc
+        src/ffmpeg/feed_thread/timeout_queue.h
+        src/ffmpeg/feed_thread/audio_decoder_interface.h
         )
 
 #include_directories(${FFmpegAudioDecoder_SOURCE_DIR})
