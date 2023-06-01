@@ -5,6 +5,7 @@
 #include <fstream>
 #include "opus_decoder.h"
 #include "vector"
+#include <cstring>
 
 using namespace Rokid;
 using namespace std;
@@ -46,15 +47,7 @@ int RKOpusDecoder::start(format_buffer_write write_buffer, void *opaque_out) {
   return 0;
 }
 
-//const uint16_t *RKOpusDecoder::decode_frame(const void *opu, uint32_t opu_len) {
-int RKOpusDecoder::feed(uint8_t *data, int data_size) const {
-  if (_opus_decoder == nullptr) {
-    return -1;
-  }
-  if (data == nullptr) {
-    return -2;
-  }
-
+int RKOpusDecoder::decode_frame(uint8_t *data, int data_size) {
   // 读取第一个字节并转换为int类型
   uint8_t first_byte = *data;
   int num_bytes_to_read = static_cast<int>(first_byte);
@@ -92,7 +85,43 @@ int RKOpusDecoder::feed(uint8_t *data, int data_size) const {
     buffer.resize(num_bytes_to_read);
     std::copy(bytes_to_read, bytes_to_read + num_bytes_to_read, buffer.begin());
   }
+
   return 0;
+}
+
+int RKOpusDecoder::feed(uint8_t *data, int data_size) {
+  if (_opus_decoder == nullptr) {
+    return -1;
+  }
+  if (data == nullptr) {
+    return -2;
+  }
+
+  for (int i = 0; i < data_size; i++) {
+    _opu_queue.push(data[i]);
+  }
+
+  uint8_t first_byte = _opu_queue.front();
+  int num_bytes_to_read = static_cast<int>(first_byte);
+  int ret;
+  while (!_opu_queue.empty() && _opu_queue.size() > num_bytes_to_read) {
+    std::vector<uint8_t> data_list;
+    for (int i = 0; i < num_bytes_to_read + 1; i++) {
+      uint8_t c = _opu_queue.front();
+      _opu_queue.pop();
+      data_list.push_back(c);
+    }
+    ret = decode_frame(data_list.data(), (int) data_list.size());
+
+    if (!_opu_queue.empty()) {
+      first_byte = _opu_queue.front();
+      num_bytes_to_read = static_cast<int>(first_byte);
+    } else {
+      num_bytes_to_read = 0;
+    }
+  }
+
+  return ret;
 }
 
 int RKOpusDecoder::stop() {

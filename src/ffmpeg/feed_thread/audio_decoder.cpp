@@ -65,7 +65,7 @@ int AudioDecoder::start(format_buffer_write write_buffer, void *opaque_out) {
   return 0;
 }
 
-int AudioDecoder::feed(uint8_t *inbuf, int data_size) const {
+int AudioDecoder::feed(uint8_t *inbuf, int data_size) {
   printf("feed,%d\n", data_size);
   std::string raw_data((char *) inbuf, data_size);
   this->input_queue->push(raw_data);

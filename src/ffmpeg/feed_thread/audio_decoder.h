@@ -26,7 +26,7 @@ class AudioDecoder : public AudioDecoderInterface {
  public:
   AudioDecoder(int output_sample_rate = 16000);
   int start(format_buffer_write write_buffer, void *opaque_out) override;
-  int feed(uint8_t *inbuf, int data_size) const override;
+  int feed(uint8_t *inbuf, int data_size) override;
   int stop() override;
 
  private:

@@ -18,7 +18,7 @@ class AudioDecoderInterface {
   virtual ~AudioDecoderInterface() = default; // 声明虚析构函数
   explicit AudioDecoderInterface(int output_sample_rate = 16000) : _output_sample_rate(output_sample_rate) {}
   virtual int start(format_buffer_write write_buffer, void *opaque_out) = 0;
-  virtual int feed(uint8_t *inbuf, int data_size) const = 0;
+  virtual int feed(uint8_t *inbuf, int data_size) = 0;
   virtual int stop() = 0;
  protected:
   int _output_sample_rate;
