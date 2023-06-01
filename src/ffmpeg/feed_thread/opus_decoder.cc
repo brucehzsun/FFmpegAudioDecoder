@@ -55,25 +55,50 @@ int RKOpusDecoder::feed(uint8_t *data, int data_size) const {
     return -2;
   }
 
-  // 获取第一个字节
-//  uint8_t opus_len = *data;
+  // 读取第一个字节并转换为int类型
+  uint8_t first_byte = *data;
+  int num_bytes_to_read = static_cast<int>(first_byte);
 
-  // 指向后面所有字节的指针
-//  uint8_t *rest_data = data + 1;
+  // 指向需要读取的字节的指针
+  uint8_t *bytes_to_read = data + 1;
 
-//  std::cout << "opus_len=" << opus_len << ",data_size=" << data_size << std::endl;
+  std::cout << "num_bytes_to_read=" << num_bytes_to_read << ",data_size=" << data_size << std::endl;
 
-//  short decoded_audio[IO_BUF_SIZE];
-//  uint16_t *pcm_buffer = new uint16_t[IO_BUF_SIZE];
-  int num_samples = opus_decode(_opus_decoder, data, data_size, reinterpret_cast<opus_int16 *>(_pcm_buffer),
-                                _pcm_frame_size, 0);
-  if (num_samples < 0) {
-    return num_samples;
+  // 分配缓冲区并读取数据
+  std::vector<uint8_t> buffer(num_bytes_to_read);
+  std::copy(bytes_to_read, bytes_to_read + num_bytes_to_read, buffer.begin());
+
+  uint16_t *pcm_buffer = new uint16_t[IO_BUF_SIZE];
+  int total_samples = 0;
+  while (num_bytes_to_read > 0) {
+    int num_samples = opus_decode(_opus_decoder, buffer.data(), num_bytes_to_read,
+                                  reinterpret_cast<opus_int16 *>(pcm_buffer), _pcm_frame_size, 0);
+    if (num_samples < 0) {
+      delete[] pcm_buffer;
+      return num_samples;
+    }
+
+    (*write_buffer)(opaque_out, reinterpret_cast<uint8_t *>(pcm_buffer), num_samples * sizeof(uint16_t));
+
+
+    total_samples += num_samples;
+
+    // 计算剩余可读字节数
+    bytes_to_read += num_bytes_to_read;
+    num_bytes_to_read = static_cast<int>(*bytes_to_read);
+    bytes_to_read++;
+
+    // 重新分配缓冲区并读取数据
+    buffer.resize(num_bytes_to_read);
+    std::copy(bytes_to_read, bytes_to_read + num_bytes_to_read, buffer.begin());
   }
-  // debug
-  // printf("decode debug: %x %x %x %x\n", _pcm_buffer[240], _pcm_buffer[241], _pcm_buffer[242], _pcm_buffer[243]);
-//  return _pcm_buffer;
-  (*write_buffer)(opaque_out, reinterpret_cast<uint8_t *>(_pcm_buffer), num_samples * sizeof(uint16_t));
+
+//  int num_samples = opus_decode(_opus_decoder, buffer.data(), num_bytes_to_read, reinterpret_cast<opus_int16 *>(_pcm_buffer),
+//                                _pcm_frame_size, 0);
+//  if (num_samples < 0) {
+//    return num_samples;
+//  }
+//  (*write_buffer)(opaque_out, reinterpret_cast<uint8_t *>(_pcm_buffer), num_samples * sizeof(uint16_t));
   return 0;
 }
 

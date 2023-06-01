@@ -92,11 +92,14 @@ int main() {
 
   char length_char;
   while (input.get(length_char)) { // 读取输入文件每个字节，直到文件结束
+    std::vector<char> buffer_vector; // 存储读入的数据
     uint8_t length = static_cast<uint8_t>(length_char);
+    buffer_vector.push_back(length_char);
     char *buffer = new char[length];
     input.read(buffer, length); // 读取对应长度的内容到缓冲区
+    buffer_vector.insert(buffer_vector.end(), buffer, buffer + length); // 将缓冲区内容追加到 vector 中
     std::cout << "feed = " << length << std::endl;
-    ret = decoder.feed((uint8_t *) buffer, length); // 解码缓冲区内容
+    ret = decoder.feed((uint8_t *) buffer_vector.data(), buffer_vector.size()); // 解码缓冲区内容
     std::cout << "feed = " << length << ",ret=" << ret << std::endl;
     delete[] buffer;
   }
