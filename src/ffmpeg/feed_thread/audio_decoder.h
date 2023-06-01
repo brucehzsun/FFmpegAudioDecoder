@@ -43,6 +43,7 @@ class AudioDecoder : public AudioDecoderInterface {
   uint8_t *out_buffer = nullptr;
   int audio_stream_index = -1;
   int out_nb_channels;
+  AVIOContext *avio_cxt = nullptr;
 
  private:
   std::shared_ptr<std::thread> decode_thread_ = nullptr;

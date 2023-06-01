@@ -38,6 +38,17 @@ void AudioDecoder::DecodeThreadFunc() {
   std::cout << "audio_decoder_start" << std::endl;
   this->init_header();
   this->decode_frame();
+
+  /* Release resources */
+  av_frame_free(&frame);
+  av_packet_free(&packet);
+  swr_free(&swr_context);
+  avcodec_free_context(&av_codec_ctx); // unless avcodec_alloc_context3() is used
+  avformat_close_input(&format_ctx);
+  avcodec_close(av_codec_ctx);
+  av_free(avio_cxt->buffer);
+  av_free(this->out_buffer);
+  avio_context_free(&avio_cxt);
   std::cout << "audio_decoder_finish" << std::endl;
 }
 
@@ -87,7 +98,7 @@ int AudioDecoder::init_header() {
     return -1;
   }
 
-  AVIOContext *avio_cxt = avio_alloc_context(inbuffer, IO_BUF_SIZE, 0, this, read_buffer, nullptr, nullptr);
+  this->avio_cxt = avio_alloc_context(inbuffer, IO_BUF_SIZE, 0, this, read_buffer, nullptr, nullptr);
   if (avio_cxt == nullptr) {
     printf("C++ avio_alloc_context for input failed\n");
     return -2;

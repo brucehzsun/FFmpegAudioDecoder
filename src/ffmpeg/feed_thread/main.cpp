@@ -65,7 +65,9 @@ int test_ffmpeg() {
   std::chrono::milliseconds endms = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::now().time_since_epoch()
   );
-//    delete decoder;
+  delete decoder;
+  fclose(fp_open);
+  fclose(fp_write);
   cout << "test ffmpeg finish, time = " << (endms.count() - startTime) << endl;
   return 0;
 }
@@ -111,8 +113,10 @@ int test_opus(int index) {
 }
 
 int main() {
-//  test_ffmpeg();
   for (int i = 0; i < 1; i++) {
+    test_ffmpeg();
+  }
+  for (int i = 0; i < 5; i++) {
     test_opus(i);
   }
 }
