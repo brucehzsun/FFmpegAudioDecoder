@@ -38,10 +38,10 @@ int RKOpusDecoder::start(format_buffer_write write_buffer, void *opaque_out) {
   opus_decoder_ctl(_opus_decoder, OPUS_SET_SIGNAL(OPUS_SIGNAL_VOICE));
   opus_decoder_ctl(_opus_decoder, OPUS_SET_BITRATE(bitrate));
 
-  int duration = 20;
-  _opu_frame_size = bitrate * duration / 8000;
-  _pcm_frame_size = this->_output_sample_rate * 2 * duration / 1000;
-  _pcm_buffer = new uint16_t[_pcm_frame_size];
+//  int duration = 20;
+//  _opu_frame_size = bitrate * duration / 8000;
+//  _pcm_frame_size = this->_output_sample_rate * 2 * duration / 1000;
+  _pcm_buffer = new uint16_t[IO_BUF_SIZE];
 
   return 0;
 }
@@ -71,7 +71,7 @@ int RKOpusDecoder::feed(uint8_t *data, int data_size) const {
   int total_samples = 0;
   while (num_bytes_to_read > 0) {
     int num_samples = opus_decode(_opus_decoder, buffer.data(), num_bytes_to_read,
-                                  reinterpret_cast<opus_int16 *>(_pcm_buffer), _pcm_frame_size, 0);
+                                  reinterpret_cast<opus_int16 *>(_pcm_buffer), IO_BUF_SIZE, 0);
     if (num_samples < 0) {
       return num_samples;
     }

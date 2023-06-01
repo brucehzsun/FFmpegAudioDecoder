@@ -113,10 +113,10 @@ int test_opus(int index) {
 }
 
 int main() {
+//  for (int i = 0; i < 1; i++) {
+//    test_ffmpeg();
+//  }
   for (int i = 0; i < 1; i++) {
-    test_ffmpeg();
-  }
-  for (int i = 0; i < 5; i++) {
     test_opus(i);
   }
 }
