@@ -3,8 +3,8 @@
 #include "audio_decoder.h"
 #include "memory"
 #include "string"
-#include "thread"
 #include "iostream"
+#include "cstring"
 //
 
 namespace Rokid {

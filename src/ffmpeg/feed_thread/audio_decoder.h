@@ -9,6 +9,7 @@
 #include "memory"
 #include "timeout_queue.h"
 #include "audio_decoder_interface.h"
+#include "thread"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
